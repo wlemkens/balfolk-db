@@ -192,7 +192,7 @@ def store_language(language, db):
 def store_dance(dance, db):
     cursor = db.cursor()
     if not dance.id:
-        sql = "SELECT * FROM dances WHERE levenshtein('name', %s) <= %s"
+        sql = "SELECT * FROM dances WHERE levenshtein(name, %s) <= %s"
         val = (dance.name, len(dance.name)*0.3)
         cursor.execute(sql, val)
         result = cursor.fetchall()
@@ -231,7 +231,7 @@ def update_track(track, db):
 
 def is_similar(track, db):
     cursor = db.cursor()
-    sql = "SELECT * FROM tracks WHERE levenshtein('title', %s) <= %s"
+    sql = "SELECT * FROM tracks WHERE levenshtein(title, %s) <= %s"
     val = (track.title, len(track.title)*0.2)
     cursor.execute(sql, val)
     result = cursor.fetchall()
@@ -243,7 +243,7 @@ def is_similar(track, db):
 def store_band(band, db):
     if band and not band.id:
         cursor = db.cursor()
-        sql = "SELECT * FROM bands WHERE levenshtein('name', %s) <= %s"
+        sql = "SELECT * FROM bands WHERE levenshtein(name, %s) <= %s"
         val = (band.name, len(band.name)*0.2)
         cursor.execute(sql, val)
         result = cursor.fetchall()
@@ -263,7 +263,7 @@ def store_album(album, db):
 
     if not album.id:
         cursor = db.cursor()
-        sql = "SELECT * FROM albums WHERE levenshtein('name', %s) <= %s"
+        sql = "SELECT * FROM albums WHERE levenshtein(name, %s) <= %s"
         val = (album.name, len(album.name)*0.2)
         cursor.execute(sql, val)
         result = cursor.fetchall()
@@ -288,7 +288,7 @@ def insert_track(track, db):
 
     if not track.id:
         cursor = db.cursor()
-        sql = "SELECT * FROM tracks WHERE levenshtein('title', %s) <= %s"
+        sql = "SELECT * FROM tracks WHERE levenshtein(title, %s) <= %s"
         val = (track.title, len(track.title)*0.2)
         cursor.execute(sql, val)
         result = cursor.fetchall()
