@@ -97,7 +97,7 @@ def extract_info_from_file(path):
         file = mutagen.File(path)
 
         if file:
-            if "artist" in file.keys():
+            if "artist" in file.keys() or "albumartist" in file.keys():
                 return extract_v1(file)
             else:
                 return extract_v2(file)
