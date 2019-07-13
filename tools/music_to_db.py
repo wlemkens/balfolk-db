@@ -106,6 +106,7 @@ def extract_info_from_file(path):
 
 def extract_info_from_collection(directory):
     db = []
+    print("Extracting ID3 info")
     for dirName, subdirList, fileList in os.walk(directory):
         for fname in fileList:
             track = extract_info_from_file(os.path.join(dirName, fname))
@@ -133,12 +134,13 @@ def login_to_db():
     mydb = None
     if password:
         mydb = mysql.connector.connect(host = url, password = password, user = login, database = database)
-        print("Logged in")
+        print("Logged in to {:}".format(url))
     else:
         print("No database login data")
     return mydb
 
 def unflatten_data(flat_data):
+    print("Restructuring data")
     bands = {}
     albums = {}
     languages = {}
@@ -149,28 +151,34 @@ def unflatten_data(flat_data):
             if flat_track.album.band:
                 if not flat_track.album.band.name in bands.keys():
                     bands[flat_track.album.band.name] = flat_track.album.band
-                    track_id = flat_track.album.band.name+"/"+flat_track.album.name+"/"+flat_track.title
-                    tracks[track_id] = flat_track
                 else:
                     flat_track.album.band = bands[flat_track.album.band.name]
+                track_id = flat_track.album.band.name+"/"+flat_track.album.name+"/"+flat_track.title
+                tracks[track_id] = flat_track
             else:
-                track_id = flat_track.band.name+"/"+flat_track.title
+                track_id = flat_track.band.name+"/"+flat_track.album.name+"/"+flat_track.title
                 tracks[track_id] = flat_track
 
             if not flat_track.album.name in albums:
                 albums[flat_track.album.name] = flat_track.album
             else:
                 flat_track.album = albums[flat_track.album.name]
-            for dance in flat_track.dances:
-                if not dance.name in dances:
-                    dances[dance.name] = dance
-                    if dance.language:
-                        if not dance.language.name in languages:
-                            languages[dance.language.name] = dance.language
-                        else:
-                            dance.language = languages[dance.language.name]
-                else:
-                    dance = dances[dance.name]
+
+        else:
+            track_id = flat_track.band.name+"/"+flat_track.title
+            tracks[track_id] = flat_track
+
+        for dance in flat_track.dances:
+            if not dance.name in dances:
+                dances[dance.name] = dance
+                if dance.language:
+                    if not dance.language.name in languages:
+                        languages[dance.language.name] = dance.language
+                    else:
+                        dance.language = languages[dance.language.name]
+            else:
+                dance = dances[dance.name]
+    print("Found {:} valid tracks".format(len(tracks)))
     return bands, albums, languages, dances, tracks
 
 def store_language(language, db):
@@ -178,7 +186,7 @@ def store_language(language, db):
         cursor = db.cursor()
 
         sql = "SELECT * FROM languages WHERE name = %s"
-        val = (language.name)
+        val = (language.name, )
         cursor.execute(sql, val)
         result = cursor.fetchall()
         if len(result) == 0:
@@ -187,7 +195,7 @@ def store_language(language, db):
             db.commit()
             language.id = cursor.lastrowid
         else:
-            language.id = result[0].id
+            language.id = result[0][0]
 
 def store_dance(dance, db):
     cursor = db.cursor()
@@ -202,7 +210,14 @@ def store_dance(dance, db):
             val = (dance.name, dance.language.id)
             cursor.execute(sql, val)
             db.commit()
-            dance.id = cursor.lastrowid
+            dance.nameid = cursor.lastrowid
+            dance.id = dance.nameid
+            sql = "UPDATE dances set id = %s WHERE nameid = %s"
+            val = (dance.nameid, dance.nameid)
+            cursor.execute(sql, val)
+            db.commit()
+        else:
+            dance.id = result[0][0]
 
 
 
@@ -227,7 +242,6 @@ def update_track(track, db):
             sql = "INSERT INTO tracks_dances (trackid, danceid) VALUES (%s, %s)"
             cursor.execute(sql, val)
             db.commit()
-            dance.id = cursor.lastrowid
 
 def is_similar(track, db):
     cursor = db.cursor()
@@ -236,7 +250,7 @@ def is_similar(track, db):
     cursor.execute(sql, val)
     result = cursor.fetchall()
     if len(result) > 0:
-        track.id = result[0].id
+        track.id = result[0][0]
         return True
     return False
 
@@ -248,7 +262,7 @@ def store_band(band, db):
         cursor.execute(sql, val)
         result = cursor.fetchall()
         if len(result) > 0:
-            band.id = result[0].id
+            band.id = result[0][0]
         else:
             sql = "INSERT INTO bands (name, description) VALUES (%s, %s)"
             val = (band.name, "")
@@ -259,32 +273,34 @@ def store_band(band, db):
 
 
 def store_album(album, db):
-    store_band(album.band, db)
+    if album:
+        store_band(album.band, db)
 
-    if not album.id:
-        cursor = db.cursor()
-        sql = "SELECT * FROM albums WHERE levenshtein(name, %s) <= %s"
-        val = (album.name, len(album.name)*0.2)
-        cursor.execute(sql, val)
-        result = cursor.fetchall()
-        if len(result) > 0:
-            album.id = result[0].id
-        else:
-            if album.band:
-                sql = "INSERT INTO albums (name, bandid, year, nb_tracks) VALUES (%s, %s, %s, %s)"
-                val = (album.name, album.band.id, album.year, album.nb_tracks)
-                cursor.execute(sql, val)
-                db.commit()
-                album.id = cursor.lastrowid
+        if not album.id:
+            cursor = db.cursor()
+            sql = "SELECT * FROM albums WHERE levenshtein(name, %s) <= %s"
+            val = (album.name, len(album.name)*0.2)
+            cursor.execute(sql, val)
+            result = cursor.fetchall()
+            if len(result) > 0:
+                album.id = result[0][0]
             else:
-                sql = "INSERT INTO albums (name, year, nb_tracks) VALUES (%s, %s, %s)"
-                val = (album.name, album.year, album.nb_tracks)
-                cursor.execute(sql, val)
-                db.commit()
-                album.id = cursor.lastrowid
+                if album.band:
+                    sql = "INSERT INTO albums (name, bandid, year, nb_tracks) VALUES (%s, %s, %s, %s)"
+                    val = (album.name, album.band.id, album.year, album.nb_tracks)
+                    cursor.execute(sql, val)
+                    db.commit()
+                    album.id = cursor.lastrowid
+                else:
+                    sql = "INSERT INTO albums (name, year, nb_tracks) VALUES (%s, %s, %s)"
+                    val = (album.name, album.year, album.nb_tracks)
+                    cursor.execute(sql, val)
+                    db.commit()
+                    album.id = cursor.lastrowid
 
 def insert_track(track, db):
     store_album(track.album, db)
+    store_band(track.band, db)
 
     if not track.id:
         cursor = db.cursor()
@@ -293,14 +309,22 @@ def insert_track(track, db):
         cursor.execute(sql, val)
         result = cursor.fetchall()
         if len(result) > 0:
-            track.id = result[0].id
+            track.id = result[0][0]
         else:
-            sql = "INSERT INTO tracks (title, albumid, number) VALUES (%s, %s, %s)"
-            print ("track:",track.title, track.album.id, track.number)
-            val = (track.title, track.album.id, track.number)
-            cursor.execute(sql, val)
-            db.commit()
-            track.id = cursor.lastrowid
+            if track.album:
+                sql = "INSERT INTO tracks (title, bandid, albumid, number) VALUES (%s, %s, %s, %s)"
+                print ("track:",track.title, track.band.id, track.album.id, track.number)
+                val = (track.title, track.band.id, track.album.id, track.number)
+                cursor.execute(sql, val)
+                db.commit()
+                track.id = cursor.lastrowid
+            else:
+                sql = "INSERT INTO tracks (title, bandid, number) VALUES (%s, %s, %s)"
+                print ("track:",track.title, track.band.id, track.number)
+                val = (track.title, track.band.id, track.number)
+                cursor.execute(sql, val)
+                db.commit()
+                track.id = cursor.lastrowid
 
 
 def store_track(track, db):
