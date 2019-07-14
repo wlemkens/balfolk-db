@@ -6,9 +6,26 @@ import mysql.connector
 from Music.Music import *
 
 def parse_dance(dance):
+    '''
+    Try to sanitize the dances
+    :param dance:   The string to be sanitized
+    :return:        The sanitized string
+    '''
+
+    # My genre tags contain "Folk" in front of the dance
     return dance[0].replace("Folk", "").strip()
 
 def getYear(date):
+    '''
+    Convert the different ways we can get the date into a integer containing the year
+    Currently supports:
+    - year string
+    - yyyy-mm-dd string
+    - dd-mm-yyyy string
+    - mutagen ID3Timestamp
+    :param date: The date to be converted
+    :return:     The year as integer
+    '''
     if isinstance(date,mutagen.id3.ID3TimeStamp):
         return date.year
     if len(date) > 4:
@@ -20,6 +37,11 @@ def getYear(date):
     return int(date)
 
 def extract_v1(file):
+    '''
+    Extract the music info from one of the two formats we can get the tags
+    :param file: The opened mutagen file to analyse
+    :return:     A Track with the ID3 info or None if not information was available
+    '''
     artist = None
     albumartist = None
     if "artist" in file.keys():
@@ -32,7 +54,6 @@ def extract_v1(file):
         if albumartist:
             albumband = Band(albumartist)
         language = Language("Nederlands")
-        genre = None
         dance = None
         if "genre" in file.keys():
             genre = parse_dance(file["genre"])
@@ -53,8 +74,6 @@ def extract_v1(file):
         if "tracknumber" in file.keys():
             track_nb = file["tracknumber"][0]
         track = Track(album, track_nb, file["title"][0], [dance], band)
-        if "cddb-id" in file.keys():
-            album.cddb_id = file["cddb-id"][0]
         return track
     return None
 
@@ -65,14 +84,17 @@ def hasTags(file, tags):
     return True
 
 def extract_v2(file):
-    # band, track
+    '''
+    Extract the music info from the other of the two formats we can get the tags
+    :param file: The opened mutagen file to analyse
+    :return:     A Track with the ID3 info or None if not information was available
+    '''
+    # band, track title
     required_tags = ["TPE1", "TIT2"]
-    #print(file)
     if hasTags(file, required_tags):
         artist = file["TPE1"].text[0]
         band = Band(artist)
         language = Language("Nederlands")
-        genre = None
         dance = None
         if "TCON" in file.keys():
             genre = parse_dance(file["TCON"].text)
@@ -84,19 +106,21 @@ def extract_v2(file):
         album = None
         if "TALB" in file.keys():
             total_tracks = -1
-            # if len(file["totaltracks"]) > 0:
-            #     total_tracks = file["totaltracks"][0]
             album = Album(band, file["TALB"].text[0], year, total_tracks)
         track_nb = -1
         if "TRCK" in file:
             track_nb = file["TRCK"].text[0]
         track = Track(album, track_nb, file["TIT2"].text[0], [dance], band)
-        if "cddb-id" in file:
-            album.cddb_id = file["cddb-id"]
         return track
     return None
 
 def extract_info_from_file(path):
+    '''
+    Extract the info from the mp3 or flac file
+    :param path: filename
+    :return:     None if not enough info was found
+                 A Track containing the found info otherwise
+    '''
     if (os.path.splitext(path)[1] in [".mp3",".flac"]):
         file = mutagen.File(path)
 
@@ -109,6 +133,11 @@ def extract_info_from_file(path):
     return None
 
 def extract_info_from_collection(directory):
+    '''
+    Extract the info from all music found in the given directory and underlying subdirectories
+    :param directory: The root of the library path
+    :return:          A list with all the found Tracks
+    '''
     db = []
     print("Extracting ID3 info")
     for dirName, subdirList, fileList in os.walk(directory):
@@ -120,6 +149,10 @@ def extract_info_from_collection(directory):
     return db
 
 def login_to_db():
+    '''
+    Try to login to the database using the credentials found in login.db
+    :return: the dabase connection
+    '''
     login = None
     password = None
     url = None
@@ -135,15 +168,21 @@ def login_to_db():
             if i == 3:
                 database = line.replace("\n","")
             i += 1
-    mydb = None
+    db = None
     if password:
-        mydb = mysql.connector.connect(host = url, password = password, user = login, database = database)
+        db = mysql.connector.connect(host = url, password = password, user = login, database = database)
         print("Logged in to {:}".format(url))
     else:
         print("No database login data")
-    return mydb
+    return db
 
 def unflatten_data(flat_data):
+    '''
+    Convert the list of all the tracks containing dupplicate entries (ablums, bands, ...) to a tree
+    with no dupplicate entries
+    :param flat_data: List containing dupplicate data
+    :return:          Dictionary of tracks without dupplicate data
+    '''
     print("Restructuring data")
     bands = {}
     albums = {}
@@ -187,6 +226,12 @@ def unflatten_data(flat_data):
     return bands, albums, languages, dances, tracks
 
 def store_language(language, db):
+    '''
+    Insert the language in the database if not yet present
+    :param language: Language to be added
+    :param db:       database connection to store in
+    language.id will be set to the new or existing id of the language entry in the database
+    '''
     if not language.id:
         cursor = db.cursor()
 
@@ -203,6 +248,14 @@ def store_language(language, db):
             language.id = result[0][0]
 
 def store_dance(dance, db):
+    '''
+    Insert the dance in the database if not yet present
+    Update the id of the Dance to the new or existing id
+    Since there is no way to automatically determine if the dance is a different name for the same dance, all dances
+    are considered a new dance (danceid will be the same as the id)
+    :param dance: Dance to be inserted
+    :param db:       database connection to store in
+    '''
     cursor = db.cursor()
     if dance and not dance.id:
         sql = "SELECT * FROM dances WHERE levenshtein(name, %s) <= %s"
@@ -228,11 +281,9 @@ def store_dance(dance, db):
 
 def update_track(track, db):
     '''
-    Updating tracks
-    adding dances to the list
-    :param track:
-    :param db:
-    :return:
+    Add the dances of an existing track to the database if they are not already registered
+    :param track:   Track to add the dances from
+    :param db:      database to store to
     '''
     cursor = db.cursor()
 
@@ -250,6 +301,13 @@ def update_track(track, db):
                 db.commit()
 
 def is_similar(track, db):
+    '''
+    Check if a track already exists in the database, allowing for some misspellings
+    :param track: Track to check
+    :param db:
+    :return: True if the track already exists, the id of the Track will be set to the first found similar entry
+             False if no similar track could be found
+    '''
     cursor = db.cursor()
     sql = "SELECT * FROM tracks WHERE levenshtein(title, %s) <= %s"
     val = (track.title, len(track.title)*0.2)
@@ -261,6 +319,12 @@ def is_similar(track, db):
     return False
 
 def store_band(band, db):
+    '''
+    Insert the band in the databse if not yet present
+    Updates the id of the Band to the new or existing id
+    :param band: The Band to be inserted
+    :param db:   database connection to store in
+    '''
     if band and not band.id:
         cursor = db.cursor()
         sql = "SELECT * FROM bands WHERE levenshtein(name, %s) <= %s"
@@ -279,6 +343,12 @@ def store_band(band, db):
 
 
 def store_album(album, db):
+    '''
+    Inserts a Album into the database if not yet present
+    Updates the id to the new or existing entry
+    :param album: Album to be inserted
+    :param db:    database to sotre in
+    '''
     if album:
         store_band(album.band, db)
 
@@ -306,6 +376,13 @@ def store_album(album, db):
                     album.id = cursor.lastrowid
 
 def insert_track(track, db):
+    '''
+    Inserts a track into the database if it doesn't exist yet
+    Updates the id to the new or existing entry
+    Also inserts the album, band and dances if needed
+    :param track: Track to be added
+    :param db:    database to store in
+    '''
     store_album(track.album, db)
     store_band(track.band, db)
 
@@ -336,6 +413,11 @@ def insert_track(track, db):
 
 
 def store_track(track, db):
+    '''
+    Stores a Track if it doesn't exist yet
+    :param track: Track to be added
+    :param db:    database to add in
+    '''
     if track.id:
         update_track(track, db)
     elif is_similar(track, db):
@@ -344,6 +426,10 @@ def store_track(track, db):
         insert_track(track, db)
 
 def export_to_db(data):
+    '''
+    Exports the (flat) data to the database
+    :param data: Flat data to be exported
+    '''
     bands, albums, languages, dances, tracks = unflatten_data(data)
     db = login_to_db()
 
