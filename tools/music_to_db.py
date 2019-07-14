@@ -6,7 +6,7 @@ import mysql.connector
 from Music.Music import *
 
 def parse_dance(dance):
-    return dance[0].replace("Folk ", "")
+    return dance[0].replace("Folk", "").strip()
 
 def getYear(date):
     if isinstance(date,mutagen.id3.ID3TimeStamp):
@@ -33,9 +33,11 @@ def extract_v1(file):
             albumband = Band(albumartist)
         language = Language("Nederlands")
         genre = None
+        dance = None
         if "genre" in file.keys():
             genre = parse_dance(file["genre"])
-        dance = Dance(language, genre)
+            if genre:
+                dance = Dance(language, genre)
         year = None
         if "year" in file:
             year = getYear(file["year"][0])
@@ -71,9 +73,11 @@ def extract_v2(file):
         band = Band(artist)
         language = Language("Nederlands")
         genre = None
+        dance = None
         if "TCON" in file.keys():
             genre = parse_dance(file["TCON"].text)
-        dance = Dance(language, genre)
+            if genre:
+                dance = Dance(language, genre)
         year = None
         if "TDRC" in file.keys():
             year = getYear(file["TDRC"].text[0])
@@ -169,15 +173,16 @@ def unflatten_data(flat_data):
             tracks[track_id] = flat_track
 
         for dance in flat_track.dances:
-            if not dance.name in dances:
-                dances[dance.name] = dance
-                if dance.language:
-                    if not dance.language.name in languages:
-                        languages[dance.language.name] = dance.language
-                    else:
-                        dance.language = languages[dance.language.name]
-            else:
-                dance = dances[dance.name]
+            if dance:
+                if not dance.name in dances:
+                    dances[dance.name] = dance
+                    if dance.language:
+                        if not dance.language.name in languages:
+                            languages[dance.language.name] = dance.language
+                        else:
+                            dance.language = languages[dance.language.name]
+                else:
+                    dance = dances[dance.name]
     print("Found {:} valid tracks".format(len(tracks)))
     return bands, albums, languages, dances, tracks
 
@@ -199,7 +204,7 @@ def store_language(language, db):
 
 def store_dance(dance, db):
     cursor = db.cursor()
-    if not dance.id:
+    if dance and not dance.id:
         sql = "SELECT * FROM dances WHERE levenshtein(name, %s) <= %s"
         val = (dance.name, len(dance.name)*0.3)
         cursor.execute(sql, val)
@@ -232,16 +237,17 @@ def update_track(track, db):
     cursor = db.cursor()
 
     for dance in track.dances:
-        store_dance(dance, db)
+        if dance:
+            store_dance(dance, db)
 
-        sql = "SELECT * FROM tracks_dances WHERE trackid = %s AND danceid = %s"
-        val = (track.id, dance.id)
-        cursor.execute(sql, val)
-        result = cursor.fetchall()
-        if len(result) == 0:
-            sql = "INSERT INTO tracks_dances (trackid, danceid) VALUES (%s, %s)"
+            sql = "SELECT * FROM tracks_dances WHERE trackid = %s AND danceid = %s"
+            val = (track.id, dance.id)
             cursor.execute(sql, val)
-            db.commit()
+            result = cursor.fetchall()
+            if len(result) == 0:
+                sql = "INSERT INTO tracks_dances (trackid, danceid) VALUES (%s, %s)"
+                cursor.execute(sql, val)
+                db.commit()
 
 def is_similar(track, db):
     cursor = db.cursor()
@@ -283,8 +289,9 @@ def store_album(album, db):
             cursor.execute(sql, val)
             result = cursor.fetchall()
             if len(result) > 0:
-                album.id = result[0][0]
-            else:
+                if not album.band or album.band.id == result[0][1]:
+                    album.id = result[0][0]
+            if not album.id:
                 if album.band:
                     sql = "INSERT INTO albums (name, bandid, year, nb_tracks) VALUES (%s, %s, %s, %s)"
                     val = (album.name, album.band.id, album.year, album.nb_tracks)
