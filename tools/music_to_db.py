@@ -332,6 +332,7 @@ def insert_track(track, db):
                 cursor.execute(sql, val)
                 db.commit()
                 track.id = cursor.lastrowid
+    update_track(track, db)
 
 
 def store_track(track, db):
