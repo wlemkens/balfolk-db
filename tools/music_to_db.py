@@ -2,6 +2,8 @@ import os
 import sys
 import mutagen
 import mysql.connector
+from pydub import AudioSegment
+import random
 
 from Music.Music import *
 
@@ -36,10 +38,11 @@ def getYear(date):
             return int(parts[2])
     return int(date)
 
-def extract_v1(file):
+def extract_v1(file, filename):
     '''
     Extract the music info from one of the two formats we can get the tags
     :param file: The opened mutagen file to analyse
+    :param filename: The filename of the file to be analysed
     :return:     A Track with the ID3 info or None if not information was available
     '''
     artist = None
@@ -73,7 +76,7 @@ def extract_v1(file):
         track_nb = -1
         if "tracknumber" in file.keys():
             track_nb = file["tracknumber"][0]
-        track = Track(album, track_nb, file["title"][0], [dance], band)
+        track = Track(album, track_nb, file["title"][0], [dance], band, filename)
         return track
     return None
 
@@ -83,10 +86,11 @@ def hasTags(file, tags):
             return False
     return True
 
-def extract_v2(file):
+def extract_v2(file, filename):
     '''
     Extract the music info from the other of the two formats we can get the tags
     :param file: The opened mutagen file to analyse
+    :param filename: The filename of the file to be analysed
     :return:     A Track with the ID3 info or None if not information was available
     '''
     # band, track title
@@ -110,7 +114,7 @@ def extract_v2(file):
         track_nb = -1
         if "TRCK" in file:
             track_nb = file["TRCK"].text[0]
-        track = Track(album, track_nb, file["TIT2"].text[0], [dance], band)
+        track = Track(album, track_nb, file["TIT2"].text[0], [dance], band, filename)
         return track
     return None
 
@@ -126,9 +130,9 @@ def extract_info_from_file(path):
 
         if file:
             if "artist" in file.keys() or "albumartist" in file.keys():
-                return extract_v1(file)
+                return extract_v1(file, path)
             else:
-                return extract_v2(file)
+                return extract_v2(file, path)
 
     return None
 
@@ -299,6 +303,8 @@ def update_track(track, db):
                 sql = "INSERT INTO tracks_dances (trackid, danceid) VALUES (%s, %s)"
                 cursor.execute(sql, val)
                 db.commit()
+    store_samples(track, db, 4)
+
 
 def is_similar(track, db):
     '''
@@ -375,6 +381,29 @@ def store_album(album, db):
                     db.commit()
                     album.id = cursor.lastrowid
 
+def read_for_db(filename):
+    with open(filename, 'rb') as file:
+        binaryData = file.read()
+        return binaryData
+
+def store_samples(track, db, nb_samples):
+    cursor = db.cursor()
+    sql = "SELECT * FROM samples WHERE trackid = %s"
+    val = (track.id, )
+    cursor.execute(sql, val)
+    result = cursor.fetchall()
+    to_be_added_count = nb_samples - len(result)
+    for i in range(to_be_added_count):
+        sample = get_random_part(track.filename, 20)
+        sample.export("tmp.mp3",format="mp3")
+        file_for_db = read_for_db("tmp.mp3")
+        sql = "INSERT INTO samples (trackid, data) VALUES (%s, %s)"
+        val = (track.id, file_for_db)
+        cursor.execute(sql, val)
+        db.commit()
+
+
+
 def insert_track(track, db):
     '''
     Inserts a track into the database if it doesn't exist yet
@@ -409,6 +438,7 @@ def insert_track(track, db):
                 cursor.execute(sql, val)
                 db.commit()
                 track.id = cursor.lastrowid
+
     update_track(track, db)
 
 
@@ -436,7 +466,13 @@ def export_to_db(data):
     for track in tracks.values():
         store_track(track, db)
 
-
+def get_random_part(track, part_length):
+    sound = AudioSegment.from_file(track)
+    start = 0
+    end = len(sound) - part_length * 1000
+    part_start = random.randrange(start, end)
+    part_end = part_start + part_length * 1000
+    return sound[part_start:part_end]
 
 if __name__ == "__main__":
     db = extract_info_from_collection(sys.argv[1])

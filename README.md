@@ -5,3 +5,4 @@ The tools to import and export the dances for bal folk music
 - Python3
   - Mutagen
   - mysql-connector
+  - pydub

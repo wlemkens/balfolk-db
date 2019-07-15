@@ -14,7 +14,7 @@ class Album(object):
         self.cddb_id = None
 
 class Track(object):
-    def __init__(self, album, number, title, dances, band):
+    def __init__(self, album, number, title, dances, band, filename):
         self.id = None
         self.album = album
         self.number = number
@@ -22,6 +22,7 @@ class Track(object):
         self.level = None
         self.dances = dances
         self.band = band
+        self.filename = filename
 
 class Dance(object):
     def __init__(self, language, name):
