@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 14, 2019 at 11:23 AM
+-- Generation Time: Jul 15, 2019 at 08:39 PM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- PHP Version: 7.0.33-0ubuntu0.16.04.5
 
@@ -128,6 +128,19 @@ CREATE TABLE `languages` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `samples`
+--
+
+DROP TABLE IF EXISTS `samples`;
+CREATE TABLE `samples` (
+  `id` int(11) NOT NULL,
+  `trackid` int(11) NOT NULL,
+  `data` longblob NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores music samples for determining the dance';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `tracks`
 --
 
@@ -183,6 +196,12 @@ ALTER TABLE `languages`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `samples`
+--
+ALTER TABLE `samples`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `tracks`
 --
 ALTER TABLE `tracks`
@@ -219,6 +238,11 @@ ALTER TABLE `dances`
 -- AUTO_INCREMENT for table `languages`
 --
 ALTER TABLE `languages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `samples`
+--
+ALTER TABLE `samples`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `tracks`
