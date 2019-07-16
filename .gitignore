@@ -108,4 +108,8 @@ venv.bak/
 *build*
 
 # Security
-login.db
+login.db*
+
+# temporary files
+/tools/restored.mp3
+/tools/tmp.mp3
