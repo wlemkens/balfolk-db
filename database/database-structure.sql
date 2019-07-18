@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 18, 2019 at 10:21 AM
+-- Generation Time: Jul 18, 2019 at 10:38 AM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- PHP Version: 7.0.33-0ubuntu0.16.04.5
 
@@ -80,7 +80,9 @@ CREATE TABLE `albums` (
   `name` varchar(255) NOT NULL,
   `year` int(11) DEFAULT NULL,
   `nb_tracks` int(11) DEFAULT NULL,
-  `cover_art` blob
+  `cover_art` blob,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -93,7 +95,9 @@ DROP TABLE IF EXISTS `bands`;
 CREATE TABLE `bands` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `description` text NOT NULL
+  `description` text NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -108,7 +112,9 @@ CREATE TABLE `dances` (
   `languageid` int(11) NOT NULL,
   `nameid` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `level` tinyint(4) DEFAULT NULL
+  `level` tinyint(4) DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -121,7 +127,9 @@ DROP TABLE IF EXISTS `languages`;
 CREATE TABLE `languages` (
   `id` int(11) NOT NULL,
   `languageid` int(11) DEFAULT NULL,
-  `name` varchar(255) NOT NULL
+  `name` varchar(255) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -134,7 +142,9 @@ DROP TABLE IF EXISTS `samples`;
 CREATE TABLE `samples` (
   `id` int(11) NOT NULL,
   `trackid` int(11) NOT NULL,
-  `data` longblob NOT NULL
+  `data` longblob NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores music samples for determining the dance';
 
 -- --------------------------------------------------------
@@ -151,7 +161,9 @@ CREATE TABLE `tracks` (
   `number` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   `bpm` int(11) DEFAULT NULL,
-  `level` tinyint(4) DEFAULT NULL
+  `level` tinyint(4) DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -164,7 +176,29 @@ DROP TABLE IF EXISTS `tracks_dances`;
 CREATE TABLE `tracks_dances` (
   `trackid` int(11) NOT NULL,
   `danceid` int(11) NOT NULL,
-  `votecount` int(11) NOT NULL DEFAULT '0'
+  `votecount` int(11) NOT NULL DEFAULT '0',
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `salt` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `batch_upload_allowed` tinyint(1) NOT NULL DEFAULT '0',
+  `administrator` tinyint(1) NOT NULL DEFAULT '0',
+  `moderator` tinyint(1) NOT NULL DEFAULT '0',
+  `join_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `banned` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -176,13 +210,15 @@ CREATE TABLE `tracks_dances` (
 --
 ALTER TABLE `albums`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `bandid` (`bandid`);
+  ADD KEY `bandid` (`bandid`),
+  ADD KEY `added_by` (`added_by`);
 
 --
 -- Indexes for table `bands`
 --
 ALTER TABLE `bands`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `added_by` (`added_by`);
 
 --
 -- Indexes for table `dances`
@@ -197,14 +233,16 @@ ALTER TABLE `dances`
 --
 ALTER TABLE `languages`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `languageid` (`languageid`);
+  ADD KEY `languageid` (`languageid`),
+  ADD KEY `added_by` (`added_by`);
 
 --
 -- Indexes for table `samples`
 --
 ALTER TABLE `samples`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `trackid` (`trackid`);
+  ADD KEY `trackid` (`trackid`),
+  ADD KEY `added_by` (`added_by`);
 
 --
 -- Indexes for table `tracks`
@@ -212,7 +250,8 @@ ALTER TABLE `samples`
 ALTER TABLE `tracks`
   ADD PRIMARY KEY (`id`),
   ADD KEY `albumid` (`albumid`),
-  ADD KEY `bandid` (`bandid`);
+  ADD KEY `bandid` (`bandid`),
+  ADD KEY `added_by` (`added_by`);
 
 --
 -- Indexes for table `tracks_dances`
@@ -220,7 +259,14 @@ ALTER TABLE `tracks`
 ALTER TABLE `tracks_dances`
   ADD PRIMARY KEY (`trackid`,`danceid`),
   ADD KEY `trackid` (`trackid`),
-  ADD KEY `danceid` (`danceid`);
+  ADD KEY `danceid` (`danceid`),
+  ADD KEY `added_by` (`added_by`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -255,6 +301,11 @@ ALTER TABLE `samples`
 -- AUTO_INCREMENT for table `tracks`
 --
 ALTER TABLE `tracks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- Constraints for dumped tables
