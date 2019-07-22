@@ -7,11 +7,14 @@ from tools.common import *
 
 
 def send_to_web(track, username, password):
-    data = {'track': track, "username":username,"password":password}
-    url = "http://balfolk-db.be/db/add_to_db.php"
-    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    response = requests.post(url, headers=headers,json=data)
+    data = {"username":username,"password":password, **track}
+    url = "http://balfolk-db.be/db/interface/add_to_db.php"
+    headers = {'Content-type': 'application/octet-stream'}
+    file = read_for_db("tmp.mp3")
+    files = {"image": ("tmp.mp3", file)}
+    response = requests.post(url, data = data, files=files)
     print (response.content)
+    print("ok")
 
 
 def extract_info_from_collection(directory):
@@ -24,9 +27,10 @@ def extract_info_from_collection(directory):
     print("Extracting ID3 info")
     for dirName, subdirList, fileList in os.walk(directory):
         for fname in fileList:
-            track = extract_info_from_file(os.path.join(dirName, fname))
+            filename = os.path.join(dirName, fname)
+            track = extract_info_from_file(filename)
             if track:
-                track_json = track.json()
+                track_json = track.flat_json()
                 send_to_web(track_json,"wim","test")
 
     print ("Found {:} dances".format(len(db)))

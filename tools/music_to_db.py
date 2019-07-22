@@ -5,7 +5,6 @@ import mysql.connector
 from pydub import AudioSegment
 import random
 
-from Music.Music import *
 from tools.common import *
 
 
@@ -207,11 +206,6 @@ def store_album(album, db):
                     cursor.execute(sql, val)
                     db.commit()
                     album.id = cursor.lastrowid
-
-def read_for_db(filename):
-    with open(filename, 'rb') as file:
-        binaryData = file.read()
-        return binaryData
 
 def store_samples(track, db, nb_samples):
     cursor = db.cursor()

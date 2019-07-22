@@ -208,6 +208,11 @@ def extract_v2(file, filename):
         return track
     return None
 
+def read_for_db(filename):
+    with open(filename, 'rb') as file:
+        binaryData = file.read()
+        return binaryData
+
 def extract_info_from_file(path):
     '''
     Extract the info from the mp3 or flac file
