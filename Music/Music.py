@@ -50,8 +50,8 @@ class Track(object):
         dances_json = []
         for dance in self.dances:
             if dance:
-                dances_json += [dance.json()]
-        return { "title" : self.title, "level" : self.level, "dances" : dances_json, **self.album.flat_json(), **self.band.flat_json()}
+                dances_json += [dance.flat_json()]
+        return { "title" : self.title, "level" : self.level, "dances" : dances_json, "filename" : self.filename, **self.album.flat_json(), **self.band.flat_json()}
 
 class Dance(object):
     def __init__(self, language, name):
