@@ -3,10 +3,11 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 18, 2019 at 10:38 AM
+-- Generation Time: Jul 23, 2019 at 05:30 PM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- PHP Version: 7.0.33-0ubuntu0.16.04.5
 
+SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
@@ -19,15 +20,15 @@ SET time_zone = "+00:00";
 --
 -- Database: `balfolk`
 --
-CREATE DATABASE IF NOT EXISTS `balfolk` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `balfolk`;
+CREATE DATABASE IF NOT EXISTS `c9balfolk` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `c9balfolk`;
 
 DELIMITER $$
 --
 -- Functions
 --
 DROP FUNCTION IF EXISTS `levenshtein`$$
-CREATE DEFINER=`wim`@`localhost` FUNCTION `levenshtein` (`s1` VARCHAR(255), `s2` VARCHAR(255)) RETURNS INT(11) BEGIN
+CREATE FUNCTION `levenshtein` (`s1` VARCHAR(255), `s2` VARCHAR(255)) RETURNS INT(11) BEGIN
         DECLARE s1_len, s2_len, i, j, c, c_temp, cost INT;
         DECLARE s1_char CHAR;
                 DECLARE cv0, cv1 VARBINARY(256);
@@ -70,12 +71,27 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Table structure for table `albums`
+-- Drops to the front
 --
 
 DROP TABLE IF EXISTS `albums`;
+DROP TABLE IF EXISTS `bands`;
+DROP TABLE IF EXISTS `dances`;
+DROP TABLE IF EXISTS `languages`;
+DROP TABLE IF EXISTS `samples`;
+DROP TABLE IF EXISTS `tracks`;
+DROP TABLE IF EXISTS `tracks_dances`;
+DROP TABLE IF EXISTS `users`;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `albums`
+--
+
 CREATE TABLE `albums` (
   `id` int(11) NOT NULL,
+  `updateid` int(11) DEFAULT NULL,
   `bandid` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `year` int(11) DEFAULT NULL,
@@ -91,9 +107,9 @@ CREATE TABLE `albums` (
 -- Table structure for table `bands`
 --
 
-DROP TABLE IF EXISTS `bands`;
 CREATE TABLE `bands` (
   `id` int(11) NOT NULL,
+  `updateid` int(11) DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `description` text NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -106,9 +122,9 @@ CREATE TABLE `bands` (
 -- Table structure for table `dances`
 --
 
-DROP TABLE IF EXISTS `dances`;
 CREATE TABLE `dances` (
   `id` int(11) NOT NULL,
+  `parentid` int(11) DEFAULT NULL,
   `languageid` int(11) NOT NULL,
   `nameid` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -123,7 +139,6 @@ CREATE TABLE `dances` (
 -- Table structure for table `languages`
 --
 
-DROP TABLE IF EXISTS `languages`;
 CREATE TABLE `languages` (
   `id` int(11) NOT NULL,
   `languageid` int(11) DEFAULT NULL,
@@ -138,7 +153,6 @@ CREATE TABLE `languages` (
 -- Table structure for table `samples`
 --
 
-DROP TABLE IF EXISTS `samples`;
 CREATE TABLE `samples` (
   `id` int(11) NOT NULL,
   `trackid` int(11) NOT NULL,
@@ -153,9 +167,9 @@ CREATE TABLE `samples` (
 -- Table structure for table `tracks`
 --
 
-DROP TABLE IF EXISTS `tracks`;
 CREATE TABLE `tracks` (
   `id` int(11) NOT NULL,
+  `updateid` int(11) DEFAULT NULL,
   `albumid` int(11) DEFAULT NULL,
   `bandid` int(11) NOT NULL,
   `number` int(11) NOT NULL,
@@ -172,11 +186,11 @@ CREATE TABLE `tracks` (
 -- Table structure for table `tracks_dances`
 --
 
-DROP TABLE IF EXISTS `tracks_dances`;
 CREATE TABLE `tracks_dances` (
   `trackid` int(11) NOT NULL,
   `danceid` int(11) NOT NULL,
-  `votecount` int(11) NOT NULL DEFAULT '0',
+  `upvote` int(11) NOT NULL DEFAULT '0',
+  `downvote` int(11) NOT NULL DEFAULT '0',
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -187,7 +201,6 @@ CREATE TABLE `tracks_dances` (
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
@@ -211,14 +224,16 @@ CREATE TABLE `users` (
 ALTER TABLE `albums`
   ADD PRIMARY KEY (`id`),
   ADD KEY `bandid` (`bandid`),
-  ADD KEY `added_by` (`added_by`);
+  ADD KEY `added_by` (`added_by`),
+  ADD KEY `updateid` (`updateid`);
 
 --
 -- Indexes for table `bands`
 --
 ALTER TABLE `bands`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `added_by` (`added_by`);
+  ADD KEY `added_by` (`added_by`),
+  ADD KEY `updateid` (`updateid`);
 
 --
 -- Indexes for table `dances`
@@ -226,7 +241,8 @@ ALTER TABLE `bands`
 ALTER TABLE `dances`
   ADD PRIMARY KEY (`nameid`),
   ADD KEY `id` (`id`),
-  ADD KEY `languageid` (`languageid`);
+  ADD KEY `languageid` (`languageid`),
+  ADD KEY `updateid` (`parentid`);
 
 --
 -- Indexes for table `languages`
@@ -251,7 +267,8 @@ ALTER TABLE `tracks`
   ADD PRIMARY KEY (`id`),
   ADD KEY `albumid` (`albumid`),
   ADD KEY `bandid` (`bandid`),
-  ADD KEY `added_by` (`added_by`);
+  ADD KEY `added_by` (`added_by`),
+  ADD KEY `updateid` (`updateid`);
 
 --
 -- Indexes for table `tracks_dances`
@@ -315,7 +332,14 @@ ALTER TABLE `users`
 -- Constraints for table `albums`
 --
 ALTER TABLE `albums`
+  ADD CONSTRAINT `album_album` FOREIGN KEY (`updateid`) REFERENCES `albums` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `album_band` FOREIGN KEY (`bandid`) REFERENCES `bands` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `bands`
+--
+ALTER TABLE `bands`
+  ADD CONSTRAINT `band_band` FOREIGN KEY (`updateid`) REFERENCES `bands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `dances`
@@ -340,7 +364,8 @@ ALTER TABLE `samples`
 --
 ALTER TABLE `tracks`
   ADD CONSTRAINT `album_track` FOREIGN KEY (`albumid`) REFERENCES `albums` (`id`),
-  ADD CONSTRAINT `band_track` FOREIGN KEY (`bandid`) REFERENCES `bands` (`id`);
+  ADD CONSTRAINT `band_track` FOREIGN KEY (`bandid`) REFERENCES `bands` (`id`),
+  ADD CONSTRAINT `track_track` FOREIGN KEY (`updateid`) REFERENCES `tracks` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `tracks_dances`
@@ -348,6 +373,7 @@ ALTER TABLE `tracks`
 ALTER TABLE `tracks_dances`
   ADD CONSTRAINT `dance_track` FOREIGN KEY (`danceid`) REFERENCES `dances` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `track_dance` FOREIGN KEY (`trackid`) REFERENCES `tracks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+SET FOREIGN_KEY_CHECKS=1;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
