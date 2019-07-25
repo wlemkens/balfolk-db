@@ -3,11 +3,10 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 23, 2019 at 05:30 PM
+-- Generation Time: Jul 25, 2019 at 03:19 PM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- PHP Version: 7.0.33-0ubuntu0.16.04.5
 
-SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
@@ -24,6 +23,23 @@ CREATE DATABASE IF NOT EXISTS `c9balfolk` DEFAULT CHARACTER SET utf8 COLLATE utf
 USE `c9balfolk`;
 
 DELIMITER $$
+
+--- --------------------------------------------------------
+-
+---
+--- Drops to the front
+---
+-
+-DROP TABLE IF EXISTS `albums`;
+-DROP TABLE IF EXISTS `bands`;
+-DROP TABLE IF EXISTS `dances`;
+-DROP TABLE IF EXISTS `languages`;
+-DROP TABLE IF EXISTS `samples`;
+-DROP TABLE IF EXISTS `tracks`;
+-DROP TABLE IF EXISTS `tracks_dances`;
+-DROP TABLE IF EXISTS `users`;
+-
+--- --------------------------------------------------------
 --
 -- Functions
 --
@@ -71,21 +87,6 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
--- Drops to the front
---
-
-DROP TABLE IF EXISTS `albums`;
-DROP TABLE IF EXISTS `bands`;
-DROP TABLE IF EXISTS `dances`;
-DROP TABLE IF EXISTS `languages`;
-DROP TABLE IF EXISTS `samples`;
-DROP TABLE IF EXISTS `tracks`;
-DROP TABLE IF EXISTS `tracks_dances`;
-DROP TABLE IF EXISTS `users`;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `albums`
 --
 
@@ -112,6 +113,7 @@ CREATE TABLE `bands` (
   `updateid` int(11) DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `description` text NOT NULL,
+  `url` varchar(255) NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -373,7 +375,6 @@ ALTER TABLE `tracks`
 ALTER TABLE `tracks_dances`
   ADD CONSTRAINT `dance_track` FOREIGN KEY (`danceid`) REFERENCES `dances` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `track_dance` FOREIGN KEY (`trackid`) REFERENCES `tracks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-SET FOREIGN_KEY_CHECKS=1;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
