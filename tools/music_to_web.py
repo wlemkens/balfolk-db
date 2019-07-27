@@ -10,14 +10,15 @@ def send_to_web(track, username, password):
     data = {"username":username,"password":password, **track}
     url = "http://balfolk-db.be/db/interface/add_to_db.php"
     headers = {'Content-type': 'application/octet-stream'}
-    file = read_for_db("tmp.mp3")
+    file = read_for_db("test.mp3")
     files = {"image": ("tmp.mp3", file)}
     response = requests.post(url, data = data, files=files)
-    print (response.content)
+    print (str(response.content).replace("\\n","\n"))
+    # print (str(response.content))
     print("ok")
 
 
-def extract_info_from_collection(directory):
+def extract_info_from_collection(directory, username, password):
     '''
     Extract the info from all music found in the given directory and underlying subdirectories
     :param directory: The root of the library path
@@ -31,11 +32,11 @@ def extract_info_from_collection(directory):
             track = extract_info_from_file(filename)
             if track:
                 track_json = track.flat_json()
-                send_to_web(track_json,"wim","test")
+                send_to_web(track_json,username, password)
 
     print ("Found {:} dances".format(len(db)))
     return db
 
 
 if __name__ == "__main__":
-    db = extract_info_from_collection(sys.argv[1])
+    db = extract_info_from_collection(sys.argv[1], sys.argv[2], sys.argv[3])
