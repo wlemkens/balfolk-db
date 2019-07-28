@@ -6,6 +6,7 @@ import random
 
 from Music.Music import *
 
+
 def find_dances(track, db):
     '''
     Check if a track already exists in the database, allowing for some misspellings

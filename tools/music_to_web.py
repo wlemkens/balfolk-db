@@ -69,4 +69,5 @@ def extract_info_from_collection(directory, username, password):
 
 
 if __name__ == "__main__":
+    #TODO Add language parameter
     db = extract_info_from_collection(sys.argv[1], sys.argv[2], sys.argv[3])
