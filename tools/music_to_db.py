@@ -2,8 +2,6 @@ import os
 import sys
 import mutagen
 import mysql.connector
-from pydub import AudioSegment
-import random
 
 from tools.common import *
 
@@ -286,14 +284,6 @@ def export_to_db(data):
 
     for track in tracks.values():
         store_track(track, db)
-
-def get_random_part(track, part_length):
-    sound = AudioSegment.from_file(track)
-    start = 0
-    end = len(sound) - part_length * 1000
-    part_start = random.randrange(start, end)
-    part_end = part_start + part_length * 1000
-    return sound[part_start:part_end]
 
 if __name__ == "__main__":
     db = extract_info_from_collection(sys.argv[1])

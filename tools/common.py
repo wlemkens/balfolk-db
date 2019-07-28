@@ -1,6 +1,8 @@
 import os
 import mysql.connector
 import mutagen
+from pydub import AudioSegment
+import random
 
 from Music.Music import *
 
@@ -230,3 +232,12 @@ def extract_info_from_file(path):
                 return extract_v2(file, path)
 
     return None
+
+def get_random_part(track, part_length):
+    sound = AudioSegment.from_file(track)
+    start = 0
+    end = len(sound) - part_length * 1000
+    part_start = random.randrange(start, end)
+    part_end = part_start + part_length * 1000
+    return sound[part_start:part_end]
+
