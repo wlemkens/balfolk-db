@@ -15,6 +15,7 @@ def send_mp3_to_web(track, username, password, language):
     :param password:    Password to log in on the server
     :return:
     """
+    # File might be too large
     data = {"username" : username, "password" : password, "language" : language}
     host = "localhost"
     url = "http://"+host+"/db/interface/add_mp3_to_db.php"
@@ -23,6 +24,7 @@ def send_mp3_to_web(track, username, password, language):
     response = requests.post(url, data = data, files = files)
     print (str(response.content).replace("\\n","\n"))
     print("ok")
+
 
 def send_samples(track, username, password, key, sample_count, id, sample_length):
     """
@@ -37,7 +39,7 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
     :return:
     """
     data = {"username":username,"password":password, "key" : key, "id" : id}
-    host = "localhost"
+    host = "balfolk-db.be"
     url = "http://"+host+"/db/interface/add_sample_to_db.php"
     for i in range(sample_count):
         sample = get_random_part(track["filename"], sample_length)
@@ -64,7 +66,6 @@ def send_json_to_web(track, username, password, language):
     print("Sending data for '{:}' by '{:}' ({:})".format(track["title"], track["band"]["name"], dances))
     data = {"username" : username, "password" : password, "track" : track, "language" : language}
     host = "balfolk-db.be"
-    host = "localhost"
     url = "http://"+host+"/db/interface/add_json_to_db.php"
     response = requests.post(url, json = data)
     reply_parts = str(response.content)[2:-1].split(" ");
@@ -88,8 +89,7 @@ def extract_info_from_collection(directory, language, username, password):
             track = extract_info_from_file(filename)
             if track:
                 track_json = track.json()
-                # send_json_to_web(track_json,username, password, language)
-                send_mp3_to_web(track.flat_json(), username, password, language)
+                send_json_to_web(track_json,username, password, language)
 
     print ("Found {:} dances".format(len(db)))
     return db
