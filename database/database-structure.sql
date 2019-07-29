@@ -3,10 +3,11 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 25, 2019 at 03:19 PM
+-- Generation Time: Jul 29, 2019 at 03:35 PM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- PHP Version: 7.0.33-0ubuntu0.16.04.5
 
+SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
@@ -23,23 +24,7 @@ CREATE DATABASE IF NOT EXISTS `c9balfolk` DEFAULT CHARACTER SET utf8 COLLATE utf
 USE `c9balfolk`;
 
 DELIMITER $$
-
---- --------------------------------------------------------
--
----
---- Drops to the front
----
--
--DROP TABLE IF EXISTS `albums`;
--DROP TABLE IF EXISTS `bands`;
--DROP TABLE IF EXISTS `dances`;
--DROP TABLE IF EXISTS `languages`;
--DROP TABLE IF EXISTS `samples`;
--DROP TABLE IF EXISTS `tracks`;
--DROP TABLE IF EXISTS `tracks_dances`;
--DROP TABLE IF EXISTS `users`;
--
---- --------------------------------------------------------
+-- --------------------------------------------------------
 --
 -- Functions
 --
@@ -102,6 +87,11 @@ CREATE TABLE `albums` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Truncate table before insert `albums`
+--
+
+TRUNCATE TABLE `albums`;
 -- --------------------------------------------------------
 
 --
@@ -118,6 +108,11 @@ CREATE TABLE `bands` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Truncate table before insert `bands`
+--
+
+TRUNCATE TABLE `bands`;
 -- --------------------------------------------------------
 
 --
@@ -135,6 +130,11 @@ CREATE TABLE `dances` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Truncate table before insert `dances`
+--
+
+TRUNCATE TABLE `dances`;
 -- --------------------------------------------------------
 
 --
@@ -149,12 +149,33 @@ CREATE TABLE `languages` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Truncate table before insert `languages`
+--
+
+TRUNCATE TABLE `languages`;
+--
+-- Dumping data for table `languages`
+--
+
+INSERT INTO `languages` (`id`, `languageid`, `name`, `timestamp`, `added_by`) VALUES
+(1, 1, 'Nederlands', '2019-07-27 13:22:08', 1),
+(2, 2, 'Français', '2019-07-29 10:03:41', 1),
+(3, 3, 'English', '2019-07-29 10:03:41', 1),
+(4, 1, 'Néerlandais', '2019-07-29 10:05:30', 1),
+(5, 1, 'Dutch', '2019-07-29 10:05:57', 1),
+(6, 2, 'Frans', '2019-07-29 10:07:48', 1),
+(7, 2, 'French', '2019-07-29 10:07:48', 1),
+(8, 3, 'Engels', '2019-07-29 10:08:54', 1),
+(9, 3, 'Anglais', '2019-07-29 10:08:54', 1);
+
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `samples`
 --
 
+DROP TABLE IF EXISTS `samples`;
 CREATE TABLE `samples` (
   `id` int(11) NOT NULL,
   `trackid` int(11) NOT NULL,
@@ -163,12 +184,18 @@ CREATE TABLE `samples` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores music samples for determining the dance';
 
+--
+-- Truncate table before insert `samples`
+--
+
+TRUNCATE TABLE `samples`;
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `tracks`
 --
 
+DROP TABLE IF EXISTS `tracks`;
 CREATE TABLE `tracks` (
   `id` int(11) NOT NULL,
   `updateid` int(11) DEFAULT NULL,
@@ -182,12 +209,18 @@ CREATE TABLE `tracks` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Truncate table before insert `tracks`
+--
+
+TRUNCATE TABLE `tracks`;
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `tracks_dances`
 --
 
+DROP TABLE IF EXISTS `tracks_dances`;
 CREATE TABLE `tracks_dances` (
   `trackid` int(11) NOT NULL,
   `danceid` int(11) NOT NULL,
@@ -197,12 +230,18 @@ CREATE TABLE `tracks_dances` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Truncate table before insert `tracks_dances`
+--
+
+TRUNCATE TABLE `tracks_dances`;
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `users`
 --
 
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
@@ -215,6 +254,18 @@ CREATE TABLE `users` (
   `join_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `banned` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Truncate table before insert `users`
+--
+
+TRUNCATE TABLE `users`;
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`, `salt`, `email`, `batch_upload_allowed`, `administrator`, `moderator`, `join_date`, `banned`) VALUES
+(1, 'wim', '*26804428737BFEAF6B454F64F19342EB5C2A4306', 'a9b4k2q1', 'wim.lemkens@gmail.com', 1, 1, 1, '2019-07-27 13:10:02', 0);
 
 --
 -- Indexes for dumped tables
@@ -310,7 +361,7 @@ ALTER TABLE `dances`
 -- AUTO_INCREMENT for table `languages`
 --
 ALTER TABLE `languages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 --
 -- AUTO_INCREMENT for table `samples`
 --
@@ -325,7 +376,7 @@ ALTER TABLE `tracks`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- Constraints for dumped tables
 --
@@ -375,6 +426,7 @@ ALTER TABLE `tracks`
 ALTER TABLE `tracks_dances`
   ADD CONSTRAINT `dance_track` FOREIGN KEY (`danceid`) REFERENCES `dances` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `track_dance` FOREIGN KEY (`trackid`) REFERENCES `tracks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+SET FOREIGN_KEY_CHECKS=1;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
