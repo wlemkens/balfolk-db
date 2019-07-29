@@ -17,7 +17,7 @@ def find_dances_online(track, language):
     :return:        If the track is found in the database
     """
     print("Querying for '{:}' by '{:}'".format(track.title, track.band.name))
-    data = {"track":track.json(),"language":language}
+    data = {"track":track.json(), "language":language}
     host = "balfolk-db.be"
     host = "localhost"
     url = "http://"+host+"/db/interface/query_db.php"
