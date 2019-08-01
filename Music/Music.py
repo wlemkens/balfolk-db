@@ -19,7 +19,10 @@ class Album(object):
         self.nb_tracks = nb_tracks
 
     def json(self):
-        return { "id" : self.id, "band" : self.band.json(), "name" : self.name, "year" : self.year, "nb_tracks" : self.nb_tracks}
+        band = {}
+        if self.band:
+            band = self.band.json()
+        return { "id" : self.id, "band" : band, "name" : self.name, "year" : self.year, "nb_tracks" : self.nb_tracks}
 
     def flat_json(self):
         band_json = {}
@@ -44,13 +47,19 @@ class Track(object):
         for dance in self.dances:
             if dance:
                 dances_json += [dance.json()]
-        return { "id" : self.id, "album" : self.album.json(), "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename}
+        album = {}
+        if self.album:
+            album = self.album.json()
+        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename}
 
     def flat_json(self):
         dances_json = []
         for dance in self.dances:
             if dance:
                 dances_json += [dance.flat_json()]
+        album = {}
+        if self.album:
+            album = self.album.flat_json()
         return { "title" : self.title, "level" : self.level, "dances" : dances_json, "number" : self.number, "filename" : self.filename, **self.album.flat_json(), **self.band.flat_json()}
 
 class Dance(object):
