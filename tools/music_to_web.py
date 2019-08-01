@@ -100,6 +100,9 @@ def printUsage(argv):
     print("    Most likely supported: Nederlands, Dutch, Néerlandais")
     print("                           Français, French, Frans")
     print("                           English, Engels, Englais")
+    print("This application will send the ID3 meta data to the server and will also send some")
+    print("samples of music not yet known to the server to allow the determination of the dance.")
+    print("No complete audio track will be stored on the server.")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
