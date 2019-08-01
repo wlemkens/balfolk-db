@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 29, 2019 at 03:35 PM
+-- Generation Time: Aug 01, 2019 at 12:18 PM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
 -- PHP Version: 7.0.33-0ubuntu0.16.04.5
 
@@ -24,7 +24,6 @@ CREATE DATABASE IF NOT EXISTS `c9balfolk` DEFAULT CHARACTER SET utf8 COLLATE utf
 USE `c9balfolk`;
 
 DELIMITER $$
--- --------------------------------------------------------
 --
 -- Functions
 --
@@ -75,6 +74,7 @@ DELIMITER ;
 -- Table structure for table `albums`
 --
 
+DROP TABLE IF EXISTS `albums`;
 CREATE TABLE `albums` (
   `id` int(11) NOT NULL,
   `updateid` int(11) DEFAULT NULL,
@@ -87,17 +87,13 @@ CREATE TABLE `albums` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Truncate table before insert `albums`
---
-
-TRUNCATE TABLE `albums`;
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `bands`
 --
 
+DROP TABLE IF EXISTS `bands`;
 CREATE TABLE `bands` (
   `id` int(11) NOT NULL,
   `updateid` int(11) DEFAULT NULL,
@@ -108,17 +104,13 @@ CREATE TABLE `bands` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Truncate table before insert `bands`
---
-
-TRUNCATE TABLE `bands`;
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `dances`
 --
 
+DROP TABLE IF EXISTS `dances`;
 CREATE TABLE `dances` (
   `id` int(11) NOT NULL,
   `parentid` int(11) DEFAULT NULL,
@@ -130,17 +122,13 @@ CREATE TABLE `dances` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Truncate table before insert `dances`
---
-
-TRUNCATE TABLE `dances`;
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `languages`
 --
 
+DROP TABLE IF EXISTS `languages`;
 CREATE TABLE `languages` (
   `id` int(11) NOT NULL,
   `languageid` int(11) DEFAULT NULL,
@@ -167,7 +155,8 @@ INSERT INTO `languages` (`id`, `languageid`, `name`, `timestamp`, `added_by`) VA
 (6, 2, 'Frans', '2019-07-29 10:07:48', 1),
 (7, 2, 'French', '2019-07-29 10:07:48', 1),
 (8, 3, 'Engels', '2019-07-29 10:08:54', 1),
-(9, 3, 'Anglais', '2019-07-29 10:08:54', 1);
+(9, 3, 'Anglais', '2019-07-29 10:08:54', 1),
+(10, 10, '', '2019-07-29 13:23:11', 1);
 
 -- --------------------------------------------------------
 
@@ -184,11 +173,6 @@ CREATE TABLE `samples` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores music samples for determining the dance';
 
---
--- Truncate table before insert `samples`
---
-
-TRUNCATE TABLE `samples`;
 -- --------------------------------------------------------
 
 --
@@ -209,11 +193,6 @@ CREATE TABLE `tracks` (
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Truncate table before insert `tracks`
---
-
-TRUNCATE TABLE `tracks`;
 -- --------------------------------------------------------
 
 --
@@ -224,17 +203,13 @@ DROP TABLE IF EXISTS `tracks_dances`;
 CREATE TABLE `tracks_dances` (
   `trackid` int(11) NOT NULL,
   `danceid` int(11) NOT NULL,
+  `official` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Is this the dance announced by the band?',
   `upvote` int(11) NOT NULL DEFAULT '0',
   `downvote` int(11) NOT NULL DEFAULT '0',
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Truncate table before insert `tracks_dances`
---
-
-TRUNCATE TABLE `tracks_dances`;
 -- --------------------------------------------------------
 
 --
@@ -346,17 +321,17 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `albums`
 --
 ALTER TABLE `albums`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=116;
 --
 -- AUTO_INCREMENT for table `bands`
 --
 ALTER TABLE `bands`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 --
 -- AUTO_INCREMENT for table `dances`
 --
 ALTER TABLE `dances`
-  MODIFY `nameid` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `nameid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=109;
 --
 -- AUTO_INCREMENT for table `languages`
 --
@@ -366,12 +341,12 @@ ALTER TABLE `languages`
 -- AUTO_INCREMENT for table `samples`
 --
 ALTER TABLE `samples`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3805;
 --
 -- AUTO_INCREMENT for table `tracks`
 --
 ALTER TABLE `tracks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=952;
 --
 -- AUTO_INCREMENT for table `users`
 --
