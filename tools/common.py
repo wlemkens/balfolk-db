@@ -155,6 +155,9 @@ def extract_v1(file, filename):
             genre = parse_dance(file["genre"])
             if genre:
                 dance = Dance(language, genre)
+        bpm = -1
+        if "bpm" in file.keys():
+            bpm = file["bpm"]
         year = None
         if "year" in file:
             year = getYear(file["year"][0])
@@ -169,7 +172,7 @@ def extract_v1(file, filename):
         track_nb = -1
         if "tracknumber" in file.keys():
             track_nb = file["tracknumber"][0]
-        track = Track(album, track_nb, file["title"][0], [dance], band, filename)
+        track = Track(album, track_nb, file["title"][0], [dance], band, filename, bpm)
         return track
     return None
 
@@ -197,6 +200,9 @@ def extract_v2(file, filename):
             genre = parse_dance(file["TCON"].text)
             if genre:
                 dance = Dance(language, genre)
+        bpm = -1
+        if "TBPM" in file.keys():
+            bpm = file["TBPM"]
         year = None
         if "TDRC" in file.keys():
             year = getYear(file["TDRC"].text[0])
@@ -207,7 +213,7 @@ def extract_v2(file, filename):
         track_nb = -1
         if "TRCK" in file:
             track_nb = file["TRCK"].text[0]
-        track = Track(album, track_nb, file["TIT2"].text[0], [dance], band, filename)
+        track = Track(album, track_nb, file["TIT2"].text[0], [dance], band, filename, bpm)
         return track
     return None
 

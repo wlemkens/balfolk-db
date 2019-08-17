@@ -7,7 +7,7 @@ import sys
 import requests
 
 from tools.common import *
-from mutagen.id3 import ID3, TCON
+from mutagen.id3 import ID3, TCON, TBPM
 
 def find_dances_online(track, language):
     """
@@ -27,7 +27,10 @@ def find_dances_online(track, language):
     track.dances = []
     if len(str(response.content))>3:
         found = int(str(response.content)[2:3])
-        dances = str(response.content)[3:-1].split(";");
+        parts = str(response.content)[3:-1].split(";")
+        dances = parts[:-1];
+        if (parts[-1]):
+            track.bpm = int(parts[-1])
         for dance_str in dances:
             dance = Dance(None, dance_str)
             track.dances += [dance]
@@ -66,13 +69,19 @@ def update_file(filename, language, clear_genre):
                         file["genre"] += [dance.name]
                     else:
                         file["genre"] = [dance.name]
+                if track.bpm > 0:
+                    file["bpm"] = track.bpm
                 file.save()
             else:
                 file = ID3(filename)
                 file.delall("TCON")
                 for dance in track.dances:
                     file.add(TCON(encoding=3, text=dance.name))
-                file.save()
+                if track.bpm > 0:
+                    file.delall("TBPM")
+                    file.add(TBPM(track.bpm))
+
+            file.save()
         else:
             if clear_genre:
                 # We might want to purge unknown genres

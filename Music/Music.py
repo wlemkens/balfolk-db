@@ -32,7 +32,7 @@ class Album(object):
         return { "album_name" : self.name, "album_year" : self.year, "album_nb_tracks" : self.nb_tracks, **band_json}
 
 class Track(object):
-    def __init__(self, album, number, title, dances, band, filename):
+    def __init__(self, album, number, title, dances, band, filename, bpm):
         self.id = None
         self.album = album
         self.number = number
@@ -41,6 +41,7 @@ class Track(object):
         self.dances = dances
         self.band = band
         self.filename = filename
+        self.bpm = bpm
 
     def json(self):
         dances_json = []
@@ -50,7 +51,7 @@ class Track(object):
         album = {}
         if self.album:
             album = self.album.json()
-        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename}
+        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename, "bpm" : self.bpm}
 
     def flat_json(self):
         dances_json = []
@@ -60,7 +61,7 @@ class Track(object):
         album = {}
         if self.album:
             album = self.album.flat_json()
-        return { "title" : self.title, "level" : self.level, "dances" : dances_json, "number" : self.number, "filename" : self.filename, **self.album.flat_json(), **self.band.flat_json()}
+        return { "title" : self.title, "level" : self.level, "dances" : dances_json, "number" : self.number, "filename" : self.filename, "bpm" : self.bpm, **self.album.flat_json(), **self.band.flat_json()}
 
 class Dance(object):
     def __init__(self, language, name):
