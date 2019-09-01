@@ -3,12 +3,14 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Aug 01, 2019 at 12:18 PM
+-- Generation Time: Sep 01, 2019 at 03:16 PM
 -- Server version: 10.0.38-MariaDB-0ubuntu0.16.04.1
--- PHP Version: 7.0.33-0ubuntu0.16.04.5
+-- PHP Version: 7.0.33-0ubuntu0.16.04.6
 
 SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -20,8 +22,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `balfolk`
 --
-CREATE DATABASE IF NOT EXISTS `c9balfolk` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `c9balfolk`;
 
 DELIMITER $$
 --
@@ -107,6 +107,35 @@ CREATE TABLE `bands` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `bpms`
+--
+
+DROP TABLE IF EXISTS `bpms`;
+CREATE TABLE `bpms` (
+  `id` int(11) NOT NULL,
+  `trackid` int(11) NOT NULL,
+  `bpm` int(11) NOT NULL,
+  `added_by` int(11) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='History for adding bpms to tracks';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bpm_votes`
+--
+
+DROP TABLE IF EXISTS `bpm_votes`;
+CREATE TABLE `bpm_votes` (
+  `bpmid` int(11) NOT NULL,
+  `value` tinyint(4) NOT NULL,
+  `added_by` int(11) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Up or down votes for the registered bpms';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `dances`
 --
 
@@ -117,10 +146,41 @@ CREATE TABLE `dances` (
   `languageid` int(11) NOT NULL,
   `nameid` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
+  `min_bpm` int(11) NOT NULL,
+  `max_bpm` int(11) NOT NULL,
   `level` tinyint(4) DEFAULT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `added_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dance_guesses`
+--
+
+DROP TABLE IF EXISTS `dance_guesses`;
+CREATE TABLE `dance_guesses` (
+  `trackid` int(11) NOT NULL,
+  `danceid` int(11) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `added_by` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Table to store all the guesses';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dance_votes`
+--
+
+DROP TABLE IF EXISTS `dance_votes`;
+CREATE TABLE `dance_votes` (
+  `trackid` int(11) NOT NULL,
+  `danceid` int(11) NOT NULL,
+  `value` tinyint(4) NOT NULL,
+  `added_by` int(11) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='History for tracking votes for the dances';
 
 -- --------------------------------------------------------
 
@@ -155,8 +215,7 @@ INSERT INTO `languages` (`id`, `languageid`, `name`, `timestamp`, `added_by`) VA
 (6, 2, 'Frans', '2019-07-29 10:07:48', 1),
 (7, 2, 'French', '2019-07-29 10:07:48', 1),
 (8, 3, 'Engels', '2019-07-29 10:08:54', 1),
-(9, 3, 'Anglais', '2019-07-29 10:08:54', 1),
-(10, 10, '', '2019-07-29 13:23:11', 1);
+(9, 3, 'Anglais', '2019-07-29 10:08:54', 1);
 
 -- --------------------------------------------------------
 
@@ -221,8 +280,8 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `salt` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `dance_language` int(11) NOT NULL COMMENT 'The language the dances will be processed as',
   `batch_upload_allowed` tinyint(1) NOT NULL DEFAULT '0',
   `administrator` tinyint(1) NOT NULL DEFAULT '0',
   `moderator` tinyint(1) NOT NULL DEFAULT '0',
@@ -239,8 +298,8 @@ TRUNCATE TABLE `users`;
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `salt`, `email`, `batch_upload_allowed`, `administrator`, `moderator`, `join_date`, `banned`) VALUES
-(1, 'wim', '*26804428737BFEAF6B454F64F19342EB5C2A4306', 'a9b4k2q1', 'wim.lemkens@gmail.com', 1, 1, 1, '2019-07-27 13:10:02', 0);
+INSERT INTO `users` (`id`, `username`, `password`, `email`, `dance_language`, `batch_upload_allowed`, `administrator`, `moderator`, `join_date`, `banned`) VALUES
+(1, 'wim', '$2y$10$ZqHGbQTtAyEu4ug9PQA8OOowmWYqqE3iX7RdQ9Jsf9AFO3yL6DmZ6', 'wim.lemkens@gmail.com', 1, 1, 1, 1, '2019-07-27 13:10:02', 0);
 
 --
 -- Indexes for dumped tables
@@ -264,6 +323,21 @@ ALTER TABLE `bands`
   ADD KEY `updateid` (`updateid`);
 
 --
+-- Indexes for table `bpms`
+--
+ALTER TABLE `bpms`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `added_by` (`added_by`),
+  ADD KEY `trackid` (`trackid`);
+
+--
+-- Indexes for table `bpm_votes`
+--
+ALTER TABLE `bpm_votes`
+  ADD KEY `bpmid` (`bpmid`),
+  ADD KEY `added_by` (`added_by`);
+
+--
 -- Indexes for table `dances`
 --
 ALTER TABLE `dances`
@@ -271,6 +345,15 @@ ALTER TABLE `dances`
   ADD KEY `id` (`id`),
   ADD KEY `languageid` (`languageid`),
   ADD KEY `updateid` (`parentid`);
+
+--
+-- Indexes for table `dance_votes`
+--
+ALTER TABLE `dance_votes`
+  ADD PRIMARY KEY (`trackid`,`danceid`,`added_by`),
+  ADD KEY `trackid` (`trackid`),
+  ADD KEY `danceid` (`danceid`),
+  ADD KEY `added_by` (`added_by`);
 
 --
 -- Indexes for table `languages`
@@ -328,15 +411,20 @@ ALTER TABLE `albums`
 ALTER TABLE `bands`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 --
+-- AUTO_INCREMENT for table `bpms`
+--
+ALTER TABLE `bpms`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+--
 -- AUTO_INCREMENT for table `dances`
 --
 ALTER TABLE `dances`
-  MODIFY `nameid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=109;
+  MODIFY `nameid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=110;
 --
 -- AUTO_INCREMENT for table `languages`
 --
 ALTER TABLE `languages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 --
 -- AUTO_INCREMENT for table `samples`
 --
@@ -370,10 +458,32 @@ ALTER TABLE `bands`
   ADD CONSTRAINT `band_band` FOREIGN KEY (`updateid`) REFERENCES `bands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
+-- Constraints for table `bpms`
+--
+ALTER TABLE `bpms`
+  ADD CONSTRAINT `bpm-track` FOREIGN KEY (`trackid`) REFERENCES `tracks` (`id`),
+  ADD CONSTRAINT `bpm_user` FOREIGN KEY (`added_by`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `bpm_votes`
+--
+ALTER TABLE `bpm_votes`
+  ADD CONSTRAINT `bpm_vote` FOREIGN KEY (`bpmid`) REFERENCES `bpms` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `bpm_vote_user` FOREIGN KEY (`added_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `dances`
 --
 ALTER TABLE `dances`
   ADD CONSTRAINT `dance_language` FOREIGN KEY (`languageid`) REFERENCES `languages` (`id`);
+
+--
+-- Constraints for table `dance_votes`
+--
+ALTER TABLE `dance_votes`
+  ADD CONSTRAINT `dance_vote` FOREIGN KEY (`danceid`) REFERENCES `dances` (`nameid`),
+  ADD CONSTRAINT `track_vote` FOREIGN KEY (`trackid`) REFERENCES `tracks` (`id`),
+  ADD CONSTRAINT `user_vote` FOREIGN KEY (`added_by`) REFERENCES `users` (`id`);
 
 --
 -- Constraints for table `languages`
@@ -402,6 +512,7 @@ ALTER TABLE `tracks_dances`
   ADD CONSTRAINT `dance_track` FOREIGN KEY (`danceid`) REFERENCES `dances` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `track_dance` FOREIGN KEY (`trackid`) REFERENCES `tracks` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 SET FOREIGN_KEY_CHECKS=1;
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
