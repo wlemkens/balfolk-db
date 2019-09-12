@@ -6,6 +6,10 @@ from tools.common import *
 """
 Program for sending data from a music collection to the online database
 """
+global host
+host = "balfolk-db.eu"
+# host = "localhost"
+
 
 def send_mp3_to_web(track, username, password, language):
     """
@@ -17,7 +21,8 @@ def send_mp3_to_web(track, username, password, language):
     """
     # File might be too large
     data = {"username" : username, "password" : password, "language" : language}
-    host = "localhost"
+    global host
+    # host = "localhost"
     url = "http://"+host+"/db/interface/add_mp3_to_db.php"
     file = read_for_db(track["filename"])
     files = {"track": ("tmp.mp3", file)}
@@ -38,8 +43,8 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
     :param sample_length: How long the samples should be
     :return:
     """
+    global host
     data = {"username":username,"password":password, "key" : key, "id" : id}
-    host = "balfolk-db.be"
     url = "http://"+host+"/db/interface/add_sample_to_db.php"
     for i in range(sample_count):
         sample = get_random_part(track["filename"], sample_length)
@@ -57,6 +62,7 @@ def send_json_to_web(track, username, password, language):
     :param language:    Language the dances are in
     :return:
     """
+    global host
     dances = None
     for dance in track["dances"]:
         if dances:
@@ -65,9 +71,10 @@ def send_json_to_web(track, username, password, language):
             dances = dance["name"]
     print("Sending data for '{:}' by '{:}' ({:})".format(track["title"], track["band"]["name"], dances))
     data = {"username" : username, "password" : password, "track" : track, "language" : language}
-    host = "balfolk-db.be"
     url = "http://"+host+"/db/interface/add_json_to_db.php"
-    response = requests.post(url, json = data)
+    headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
+    response = requests.post(url, json = data, headers = headers)
+    print (str(response.content).replace("\\n","\n"))
     reply_parts = str(response.content)[2:-1].split(" ");
     samples_needed = int(reply_parts[1])
     track_key = reply_parts[0]
