@@ -338,7 +338,7 @@ def update_file(filename, language, clear_genre, append_genre):
             if clear_genre:
                 # We might want to purge unknown genres
                 file = mutagen.File(filename)
-                if "genre" in file.keys():
+                if "title" in file.keys():
                     file["genre"] = []
                     file.save()
                 else:
@@ -360,7 +360,7 @@ def find_dances_online(track, language):
     data = {"track":track.json(), "language":language}
     url = "http://"+host+"/db/interface/query_db.php"
     response = requests.post(url, json = data)
-    print (str(response.content).replace("\\n","\n"))
+    # print (str(response.content).replace("\\n","\n"))
 
     track.dances = []
     if len(str(response.content))>3:
