@@ -209,14 +209,25 @@ def downloadTracks(fileList):
     app.setLabel("task", "Downloading track data")
     taskProgress = 0
     for file in fileList:
-        track, found, dances_found = update_file(file, language, purge, append)
-        if dances_found:
-            dances_found += 1
+        track, found, dancesFound = update_file(file, language, purge, append)
+        if dancesFound:
+            dancesFound += 1
         taskProgress += 1
         totalProgress += 1
         app.setMeter("task_progress", 100.0 * taskProgress / fileCount)
         app.setMeter("progress", 100.0 * totalProgress / totalCount)
+    done()
 
+def done():
+    global dancesFound
+    app.removeAllWidgets()
+    app.setLabel("Done")
+    app.setLabel("Found "+str(dancesFound)+" dances for your library")
+    app.addButton("Close",pressClose)
+
+def pressClose(button):
+    app.close()
+    
 loginScreen()
 
 
