@@ -210,7 +210,7 @@ def extract_v2(file, filename):
                 dance = Dance(language, genre)
         bpm = -1
         if "TBPM" in file.keys():
-            bpm = file["TBPM"]
+            bpm = file["TBPM"].text[0]
         year = None
         if "TDRC" in file.keys():
             year = getYear(file["TDRC"].text[0])
@@ -320,7 +320,7 @@ def update_file(filename, language, clear_genre, append_genre):
                     elif not dance.name in file["genre"]:
                             file["genre"] += [dance.name]
                 if track.bpm > 0:
-                    file["bpm"] = track.bpm
+                    file["bpm"] = str(track.bpm)
                 file.save()
             else:
                 file = ID3(filename)
@@ -331,7 +331,8 @@ def update_file(filename, language, clear_genre, append_genre):
                         file.add(TCON(encoding=3, text=dance.name))
                 if track.bpm > 0:
                     file.delall("TBPM")
-                    file.add(TBPM(track.bpm))
+                    file.add(TBPM(encoding=3, text=[track.bpm]))
+
 
             file.save()
         else:
