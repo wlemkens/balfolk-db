@@ -362,7 +362,7 @@ def find_dances_online(track, language):
     data = {"track":track.json(), "language":language}
     url = "http://"+host+"/db/interface/query_db.php"
     response = requests.post(url, json = data)
-    print (str(response.content).replace("\\n","\n"))
+    # print (str(response.content).replace("\\n","\n"))
     response_text = str(response.text)
     response_data = json.loads(response_text)
 

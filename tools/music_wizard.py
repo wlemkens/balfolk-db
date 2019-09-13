@@ -221,13 +221,13 @@ def downloadTracks(fileList):
 def done():
     global dancesFound
     app.removeAllWidgets()
-    app.setLabel("Done")
-    app.setLabel("Found "+str(dancesFound)+" dances for your library")
+    app.addLabel("Done")
+    app.addLabel("Found "+str(dancesFound)+" dances for your library")
     app.addButton("Close",pressClose)
 
 def pressClose(button):
     app.close()
-    
+
 loginScreen()
 
 
