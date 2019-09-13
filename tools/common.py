@@ -368,12 +368,14 @@ def find_dances_online(track, language):
 
     track.dances = []
     found = response_data["status"]
-    dances = response_data["dances"]
-    bpm = response_data["bpm"]
-    if bpm > 0:
-        track.bpm = bpm
-    for dance_str in dances:
-        dance = Dance(None, dance_str)
-        track.dances += [dance]
+    if found > 0:
+        if "dances" in response_data.keys():
+            dances = response_data["dances"]
+            bpm = response_data["bpm"]
+            if bpm > 0:
+                track.bpm = bpm
+            for dance_str in dances:
+                dance = Dance(None, dance_str)
+                track.dances += [dance]
     return found
 
