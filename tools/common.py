@@ -3,6 +3,7 @@ import mysql.connector
 import mutagen
 from pydub import AudioSegment
 import random
+import json
 
 from Music.Music import *
 from mutagen.id3 import ID3, TCON, TBPM
@@ -361,20 +362,18 @@ def find_dances_online(track, language):
     data = {"track":track.json(), "language":language}
     url = "http://"+host+"/db/interface/query_db.php"
     response = requests.post(url, json = data)
-    # print (str(response.content).replace("\\n","\n"))
+    print (str(response.content).replace("\\n","\n"))
+    response_text = str(response.text)
+    response_data = json.loads(response_text)
 
     track.dances = []
-    if len(str(response.content))>3:
-        found = int(str(response.content)[2:3])
-        parts = str(response.content)[3:-1].split(";")
-        dances = parts[:-1];
-        if (parts[-1]):
-            bpm = int(parts[-1])
-            if bpm > 0:
-                track.bpm = bpm
-        for dance_str in dances:
-            dance = Dance(None, dance_str)
-            track.dances += [dance]
-        return found
-    return False
+    found = response_data["status"]
+    dances = response_data["dances"]
+    bpm = response_data["bpm"]
+    if bpm > 0:
+        track.bpm = bpm
+    for dance_str in dances:
+        dance = Dance(None, dance_str)
+        track.dances += [dance]
+    return found
 
