@@ -211,7 +211,7 @@ def downloadTracks(fileList):
     for file in fileList:
         track, found, dancesFound = update_file(file, language, purge, append)
         if dancesFound:
-            dancesFound += 1
+            nbDancesFound += 1
         taskProgress += 1
         totalProgress += 1
         app.setMeter("task_progress", 100.0 * taskProgress / fileCount)
@@ -219,10 +219,10 @@ def downloadTracks(fileList):
     done()
 
 def done():
-    global dancesFound
+    global nbDancesFound
     app.removeAllWidgets()
     app.addLabel("Done")
-    app.addLabel("Found "+str(dancesFound)+" dances for your library")
+    app.addLabel("Found "+str(nbDancesFound)+" dances for your library")
     app.addButton("Close",pressClose)
 
 def pressClose(button):
