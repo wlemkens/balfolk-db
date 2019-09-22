@@ -186,6 +186,12 @@ def extract_v1(file, filename):
     return None
 
 def hasTags(file, tags):
+    '''
+    Returns if a audio file has all the requested tags
+    :param file: The file to check the tags for
+    :param tags: The tags to be checked
+    :return: True if all the tags are present in the file
+    '''
     for tag in tags:
         if not tag in file.keys():
             return False
@@ -227,6 +233,11 @@ def extract_v2(file, filename):
     return None
 
 def read_for_db(filename):
+    '''
+    Read a file so it can be transmitted to the database
+    :param filename: The file to read
+    :return:         The binary data from the file
+    '''
     with open(filename, 'rb') as file:
         binaryData = file.read()
         return binaryData
@@ -250,6 +261,12 @@ def extract_info_from_file(path):
     return None
 
 def get_random_part(track, part_length):
+    '''
+    Get a random sample from the given track
+    :param track:       The filename to get the sample from
+    :param part_length: How long the sample should be
+    :return:            A Audiosegment width length close to the specified length (sampling will cause a small difference)
+    '''
     sound = AudioSegment.from_file(track)
     start = 0
     end = len(sound) - part_length * 1000
@@ -258,6 +275,11 @@ def get_random_part(track, part_length):
     return sound[part_start:part_end]
 
 def getFileList(directory):
+    '''
+    Get a list of the supported files in the given directory and underlying directories
+    :param directory: Root directory to get the supported files from
+    :return:          A list of paths for the supported files
+    '''
     global supportedExtensions
     filenameList = []
     for dirName, subdirList, fileList in os.walk(directory):
@@ -269,6 +291,11 @@ def getFileList(directory):
     return filenameList
 
 def getTraks(fileList):
+    '''
+    Parse all the info of the tracks
+    :param fileList: A list of file names to get the info for
+    :return:         A list of tracks with id3 info
+    '''
     tracks = []
     for filename in fileList:
         track = extract_info_from_file(filename)
@@ -277,7 +304,10 @@ def getTraks(fileList):
     return tracks;
 
 def clearFile(filename):
-    # We might want to purge unknown genres
+    '''
+    Clear all the genre tags of the file
+    :param filename:
+    '''
     file = mutagen.File(filename)
     if "genre" in file.keys():
         file["genre"] = []
@@ -293,6 +323,7 @@ def update_file(filename, language, clear_genre, append_genre):
     :param filename:    The filename of the audio file
     :param language:  Language to get the dance names in
     :param clear_genre: If we need to clear the genre in the file if no data is found
+    :param append_genre:If we need to append the new genre (dance) to the existing list of genres
     :return: track, found, dances_found:
                     track: The track with data from the file and dances from the database
                     found: If the track was known by the online database
