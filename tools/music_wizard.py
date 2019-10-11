@@ -6,6 +6,8 @@ from tools.common import *
 
 app = gui()
 
+global language
+language = None
 sendBtn = "Send my library and tagged dances to the server (Only meta data and short samples will be send)"
 dontUpdateBtn = "Don't update my library"
 addBtn = "Add dance tags in my library (Old genre tags are kept)"
@@ -37,13 +39,21 @@ def uploadScreen2():
     app.addButtons(["All", "Some", "None"], pressUpload2)
     app.stopFrame()
 
-def languageScreen():
+def languageScreen1():
+    app.removeAllWidgets()
+    app.addLabel("question", "What language are your tags of the dances in?")
+    app.addRadioButton("language", "Dutch")
+    app.addRadioButton("language", "French")
+    app.addRadioButton("language", "English")
+    app.addButton("Continue", pressLanguage1)
+
+def languageScreen2():
     app.removeAllWidgets()
     app.addLabel("question", "What language do you pefer your tags in?")
     app.addRadioButton("language", "Dutch")
     app.addRadioButton("language", "French")
     app.addRadioButton("language", "English")
-    app.addButton("Continue", pressLanguage)
+    app.addButton("Continue", pressLanguage2)
 
 def downloadScreen1():
     app.removeAllWidgets()
@@ -98,9 +108,18 @@ def pressUpload2(button):
         tagged = True
     else:
         tagged = False
+    global language
+    if language:
+        selectLibraryScreen()
+    else:
+        languageScreen1()
+
+def pressLanguage1(button):
+    global language
+    language = app.getRadioButton("language")
     downloadScreen1()
 
-def pressLanguage(button):
+def pressLanguage2(button):
     global language
     language = app.getRadioButton("language")
     selectLibraryScreen()
@@ -122,7 +141,7 @@ def pressDownload2(button):
         method = "replace"
     else:
         method = "add"
-    languageScreen()
+    languageScreen2()
 
 def pressPrepare(button):
     if button == "Prepare Synchronization":
@@ -195,7 +214,11 @@ def uploadTracks(fileList):
         track = extract_info_from_file(file)
         if track:
             track_json = track.json()
-            send_json_to_web(track_json,usr, pwd, language)
+            message = send_json_to_web(track_json,usr, pwd, language)
+            if message:
+                app.setLabel("task", message)
+                return None
+
         taskProgress += 1
         totalProgress += 5
         app.setMeter("task_progress", 100.0 * taskProgress / fileCount)

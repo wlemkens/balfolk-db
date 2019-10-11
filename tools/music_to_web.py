@@ -69,18 +69,27 @@ def send_json_to_web(track, username, password, language):
             dances += ", "+dance["name"]
         else:
             dances = dance["name"]
-    print("Sending data for '{:}' by '{:}' ({:})".format(track["title"], track["band"]["name"], dances))
+    album = ""
+    if "name" in track["album"]:
+        album = track["album"]["name"]
+    print("Sending data for '{:}' by '{:}' on '{:}' ({:})".format(track["title"], track["band"]["name"], album, dances))
     data = {"username" : username, "password" : password, "track" : track, "language" : language}
     url = "http://"+host+"/db/interface/add_json_to_db.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, json = data, headers = headers)
     print (str(response.content).replace("\\n","\n"))
     reply_parts = str(response.content)[2:-1].split(" ");
-    samples_needed = int(reply_parts[1])
-    track_key = reply_parts[0]
-    id = reply_parts[2]
-    if samples_needed > 0:
-        send_samples(track, username, password, track_key, samples_needed, id, 20)
+    if reply_parts[1].isdigit():
+        samples_needed = int(reply_parts[1])
+        track_key = reply_parts[0]
+        id = reply_parts[2]
+        if id == 0:
+            return "Failed to submit track '{:}' from band '{:}' on album '{:}'".format(track["title"], track["band"]["name"], album)
+        if samples_needed > 0:
+            send_samples(track, username, password, track_key, samples_needed, id, 20)
+    else:
+        return str(response.content)
+    return None
 
 def extract_info_from_collection(directory, language, username, password):
     '''
