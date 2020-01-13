@@ -109,7 +109,7 @@ def login_to_db():
         print("No database login data")
     return db
 
-def parse_dance(dance):
+def parse_dance(danceList):
     '''
     Try to sanitize the dances
     :param dance:   The string to be sanitized
@@ -117,7 +117,12 @@ def parse_dance(dance):
     '''
 
     # My genre tags contain "Folk" in front of the dance
-    return dance[0].replace("Folk", "").strip()
+    result = []
+    for subDanceList in danceList:
+        dances = subDanceList.split(";")
+        for dance in dances:
+            result += [dance.lreplace("Folk ", "").strip()]
+    return result
 
 def getYear(date):
     '''
@@ -159,11 +164,11 @@ def extract_v1(file, filename):
         if albumartist:
             albumband = Band(albumartist)
         language = Language("Nederlands")
-        dance = None
+        dances = []
         if "genre" in file.keys():
-            genre = parse_dance(file["genre"])
-            if genre:
-                dance = Dance(language, genre)
+            genres = parse_dance(file["genre"])
+            for genre in genres:
+                dances += [Dance(language, genre)]
         bpm = -1
         if "bpm" in file.keys():
             bpm = file["bpm"]
@@ -181,7 +186,7 @@ def extract_v1(file, filename):
         track_nb = -1
         if "tracknumber" in file.keys():
             track_nb = file["tracknumber"][0]
-        track = Track(album, track_nb, file["title"][0], [dance], band, filename, bpm)
+        track = Track(album, track_nb, file["title"][0], dances, band, filename, bpm)
         return track
     return None
 
@@ -210,11 +215,11 @@ def extract_v2(file, filename):
         artist = file["TPE1"].text[0]
         band = Band(artist)
         language = Language("Nederlands")
-        dance = None
+        dances = []
         if "TCON" in file.keys():
-            genre = parse_dance(file["TCON"].text)
-            if genre:
-                dance = Dance(language, genre)
+            genres = parse_dance(file["TCON"].text)
+            for genre in genres:
+                dances += [Dance(language, genre)]
         bpm = -1
         if "TBPM" in file.keys():
             bpm = file["TBPM"].text[0]
@@ -228,7 +233,7 @@ def extract_v2(file, filename):
         track_nb = -1
         if "TRCK" in file:
             track_nb = file["TRCK"].text[0]
-        track = Track(album, track_nb, file["TIT2"].text[0], [dance], band, filename, bpm)
+        track = Track(album, track_nb, file["TIT2"].text[0], dances, band, filename, bpm)
         return track
     return None
 
@@ -290,7 +295,7 @@ def getFileList(directory):
                 filenameList += [filename]
     return filenameList
 
-def getTraks(fileList):
+def getTracks(fileList):
     '''
     Parse all the info of the tracks
     :param fileList: A list of file names to get the info for
