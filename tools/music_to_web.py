@@ -7,8 +7,8 @@ from tools.common import *
 Program for sending data from a music collection to the online database
 """
 global host
-host = "balfolk-db.eu"
-# host = "localhost"
+# host = "balfolk-db.eu"
+host = "localhost"
 
 
 def send_mp3_to_web(track, username, password, language):
@@ -119,6 +119,14 @@ def printUsage(argv):
     print("This application will send the ID3 meta data to the server and will also send some")
     print("samples of music not yet known to the server to allow the determination of the dance.")
     print("No complete audio track will be stored on the server.")
+
+def checkAuth(username, password):
+    data = {"username" : username, "password" : password}
+    url = "http://"+host+"/db/interface/check_auth.php"
+    headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
+    response = requests.post(url, json = data, headers = headers)
+    print (str(response.content).replace("\\n","\n"))
+    return int(response.content)
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

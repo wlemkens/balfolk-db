@@ -84,7 +84,10 @@ def pressLogin(button):
         global usr, pwd
         usr = app.getEntry("Username")
         pwd = app.getEntry("Password")
-        uploadScreen1()
+        if checkAuth(usr, pwd):
+            uploadScreen1()
+        else:
+            app.setLabel("title", "Wrong username or password")
     elif button == "Create account":
         a_website = "https://balfolk-db.eu/db/view/create_account.php"
         webbrowser.open_new(a_website)

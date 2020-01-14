@@ -8,6 +8,7 @@ import json
 from Music.Music import *
 from mutagen.id3 import ID3, TCON, TBPM
 import requests
+import re
 
 global supportedExtensions
 supportedExtensions = [".mp3", ".flac"]
@@ -109,6 +110,12 @@ def login_to_db():
         print("No database login data")
     return db
 
+def lreplace(pattern, sub, string):
+    """
+    Replaces 'pattern' in 'string' with 'sub' if 'pattern' starts 'string'.
+    """
+    return re.sub('^%s' % pattern, sub, string)
+
 def parse_dance(danceList):
     '''
     Try to sanitize the dances
@@ -121,7 +128,7 @@ def parse_dance(danceList):
     for subDanceList in danceList:
         dances = subDanceList.split(";")
         for dance in dances:
-            result += [dance.lreplace("Folk ", "").strip()]
+            result += [lreplace("Folk ", "", dance).strip()]
     return result
 
 def getYear(date):
