@@ -76,7 +76,7 @@ def selectLibraryScreen():
 
 def selectLibrary(button):
     global libraryPath
-    libraryPath = app.directoryBox(title="Music Library Path")
+    libraryPath = os.path.normpath(app.directoryBox(title="Music Library Path"))
     app.setLabel("library_path", "Library path: "+libraryPath)
 
 def pressLogin(button):
@@ -210,7 +210,7 @@ def clearTags(fileList):
         app.setMeter("progress", 100.0 * totalProgress / totalCount)
 
 def uploadTracks(fileList):
-    global totalCount, fileCount, totalProgress, usr, pwd, language
+    global totalCount, fileCount, totalProgress, usr, pwd, language, download
     taskProgress = 0
     app.setLabel("task", "Uploading track data")
     for file in fileList:
@@ -226,6 +226,8 @@ def uploadTracks(fileList):
         totalProgress += 5
         app.setMeter("task_progress", 100.0 * taskProgress / fileCount)
         app.setMeter("progress", 100.0 * totalProgress / totalCount)
+    if not download:
+        done()
 
 def downloadTracks(fileList):
     global totalCount, fileCount, totalProgress, language, method, nbDancesFound
@@ -248,11 +250,12 @@ def done():
     global nbDancesFound
     app.removeAllWidgets()
     app.addLabel("Done")
-    app.addLabel("Found "+str(nbDancesFound)+" dances for your library")
+    if download:
+        app.addLabel("Found "+str(nbDancesFound)+" dances for your library")
     app.addButton("Close",pressClose)
 
 def pressClose(button):
-    app.close()
+    app.stop()
 
 loginScreen()
 

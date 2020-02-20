@@ -7,8 +7,8 @@ from tools.common import *
 Program for sending data from a music collection to the online database
 """
 global host
-# host = "balfolk-db.eu"
-host = "localhost"
+host = "balfolk-db.eu"
+#host = "localhost"
 
 
 def send_mp3_to_web(track, username, password, language):
