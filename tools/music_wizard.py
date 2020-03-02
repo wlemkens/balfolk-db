@@ -205,9 +205,9 @@ def clearTags(fileList):
         clearFile(file)
         taskProgress += 1
         totalProgress += 1
-        app.setLabel("task", "Clearing tags")
-        app.setMeter("task_progress", 100.0 * taskProgress / fileCount)
-        app.setMeter("progress", 100.0 * totalProgress / totalCount)
+        app.queueFunction(app.setLabel, "task", "Clearing tags")
+        app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
+        app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
 
 def uploadTracks(fileList):
     global totalCount, fileCount, totalProgress, usr, pwd, language, download
@@ -224,8 +224,8 @@ def uploadTracks(fileList):
 
         taskProgress += 1
         totalProgress += 5
-        app.setMeter("task_progress", 100.0 * taskProgress / fileCount)
-        app.setMeter("progress", 100.0 * totalProgress / totalCount)
+        app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
+        app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
     if not download:
         done()
 
@@ -242,8 +242,8 @@ def downloadTracks(fileList):
             nbDancesFound += 1
         taskProgress += 1
         totalProgress += 1
-        app.setMeter("task_progress", 100.0 * taskProgress / fileCount)
-        app.setMeter("progress", 100.0 * totalProgress / totalCount)
+        app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
+        app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
     done()
 
 def done():
@@ -252,10 +252,14 @@ def done():
     app.addLabel("Done")
     if download:
         app.addLabel("Found "+str(nbDancesFound)+" dances for your library")
+    app.addButton("Synchronize another directory",pressSyncOther)
     app.addButton("Close",pressClose)
 
 def pressClose(button):
     app.stop()
+
+def pressSyncOther(button):
+    uploadScreen1()
 
 loginScreen()
 
