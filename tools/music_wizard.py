@@ -227,7 +227,7 @@ def uploadTracks(fileList):
         app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
     if not download:
-        done()
+        app.queueFunction(done)
 
 def downloadTracks(fileList):
     global totalCount, fileCount, totalProgress, language, method, nbDancesFound
@@ -244,7 +244,7 @@ def downloadTracks(fileList):
         totalProgress += 1
         app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
-    done()
+    app.queueFunction(done)
 
 def done():
     global nbDancesFound
