@@ -8,8 +8,11 @@ The tools to import and export the dances for bal folk music
   - pydub
   - appJar
   - requests
+
+## Not available via pip install
+  - Tkinter
   
-#cx-Freeze
+# cx-Freeze
 ## Windows
 ```
 python setup.py build
