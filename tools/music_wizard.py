@@ -154,7 +154,7 @@ def pressPrepare(button):
 
 def pressSynchronize(button):
     if button == "Synchronize Library":
-        synchronize()
+        app.thread(synchronize)
     else:
         app.stop()
 
