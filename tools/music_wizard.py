@@ -19,6 +19,7 @@ libraryPath = ""
 def loginScreen():
     app.removeAllWidgets()
     app.startFrame("Frame", row=0, column=0)
+    app.addImage("login", "../images/login.png")
     app.addLabel("title", "Enter credentials to synchronize database")
     app.addLabelEntry("Username")
     app.addLabelSecretEntry("Password")
@@ -28,6 +29,7 @@ def loginScreen():
 def uploadScreen1():
     app.removeAllWidgets()
     app.startFrame("Frame", row=0, column=0)
+    app.addImage("upload", "../images/local_to_remote.png")
     app.addLabel("question", "Do you want to add your library to the online database?\nYour tracks can have tagged dances but don't need to.\nOnly meta information and some random samples will be uploaded.\n(About 1.5MB/unknown track)")
     app.addButtons(["Yes", "No"], pressUpload1)
     app.stopFrame()
@@ -35,12 +37,14 @@ def uploadScreen1():
 def uploadScreen2():
     app.removeAllWidgets()
     app.startFrame("Frame", row=0, column=0)
+    app.addImage("local_dances", "../images/dances_local.png")
     app.addLabel("question", "Have your tracks tagged dances?")
     app.addButtons(["All", "Some", "None"], pressUpload2)
     app.stopFrame()
 
 def languageScreen1():
     app.removeAllWidgets()
+    app.addImage("language", "../images/language.png")
     app.addLabel("question", "What language are your tags of the dances in?")
     app.addRadioButton("language", "Dutch")
     app.addRadioButton("language", "French")
@@ -49,6 +53,7 @@ def languageScreen1():
 
 def languageScreen2():
     app.removeAllWidgets()
+    app.addImage("language", "../images/language.png")
     app.addLabel("question", "What language do you pefer your tags in?")
     app.addRadioButton("language", "Dutch")
     app.addRadioButton("language", "French")
@@ -57,11 +62,13 @@ def languageScreen2():
 
 def downloadScreen1():
     app.removeAllWidgets()
+    app.addImage("login", "../images/remote_to_local.png")
     app.addLabel("question", "Do you want to update your library with the dances of the online database?")
     app.addButtons(["Yes", "No"], pressDownload1)
 
 def downloadScreen2():
     app.removeAllWidgets()
+    app.addImage("remote_dances", "../images/dances_remote.png")
     app.addLabel("question", "How do you want your library updated?")
     app.addButton("Clear all genre tags and add the known dances (some might become empty)", pressDownload2)
     app.addButton("Only replace genre tags of tracks with known dances", pressDownload2)
@@ -69,6 +76,7 @@ def downloadScreen2():
 
 def selectLibraryScreen():
     app.removeAllWidgets()
+    app.addImage("library", "../images/library.png")
     app.addLabel("library_path", libraryPath)
     app.addButton("Select library", selectLibrary)
     app.addButtons(["Prepare Synchronization", "Cancel"], pressPrepare)
@@ -154,6 +162,7 @@ def pressPrepare(button):
 
 def pressSynchronize(button):
     if button == "Synchronize Library":
+        setupSync()
         app.thread(synchronize)
     else:
         app.stop()
@@ -162,6 +171,7 @@ def prepareSynchronization():
     app.removeAllWidgets()
     global libraryPath, fileList
     fileList = getFileList(libraryPath)
+    app.addImage("sync", "../images/prepsync.png")
     app.addLabel("Found "+str(len(fileList))+" tracks in local library")
     if len(fileList) > 100:
         app.addLabel("This will take some time")
@@ -169,9 +179,10 @@ def prepareSynchronization():
         app.addLabel("This might take some time")
     app.addButtons(["Synchronize Library", "Cancel"], pressSynchronize)
 
-def synchronize():
+def setupSync():
     app.removeAllWidgets()
     global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress
+    app.addImage("sync", "../images/sync.png")
     app.addLabel("Synchronizing")
     app.addLabel("task","Preparing")
     fileCount = len(fileList)
@@ -187,6 +198,9 @@ def synchronize():
         totalCount += 5*fileCount
     if download:
         totalCount += fileCount
+
+def synchronize():
+    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress
     if upload:
         if not tagged:
             if method == "purge":
