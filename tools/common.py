@@ -14,7 +14,7 @@ global supportedExtensions
 supportedExtensions = [".mp3", ".flac"]
 
 global host
-host = "balfolk-db.eu"
+host = "https://balfolk-db.eu"
 # host = "localhost"
 
 def find_dances(track, db):
@@ -403,7 +403,7 @@ def find_dances_online(track, language):
     global host
     print("Querying for '{:}' by '{:}'".format(track.title, track.band.name))
     data = {"track":track.json(), "language":language}
-    url = "http://"+host+"/db/interface/query_db.php"
+    url = host+"/db/interface/query_db.php"
     response = requests.post(url, json = data)
     # print (str(response.content).replace("\\n","\n"))
     response_text = str(response.text)

@@ -7,8 +7,8 @@ from tools.common import *
 Program for sending data from a music collection to the online database
 """
 global host
-host = "balfolk-db.eu"
-#host = "localhost"
+host = "https://balfolk-db.eu"
+# host = "balfolkdb.localhost"
 
 
 def send_mp3_to_web(track, username, password, language):
@@ -23,7 +23,7 @@ def send_mp3_to_web(track, username, password, language):
     data = {"username" : username, "password" : password, "language" : language}
     global host
     # host = "localhost"
-    url = "http://"+host+"/db/interface/add_mp3_to_db.php"
+    url = host+"/db/interface/add_mp3_to_db.php"
     file = read_for_db(track["filename"])
     files = {"track": ("tmp.mp3", file)}
     response = requests.post(url, data = data, files = files)
@@ -45,7 +45,7 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
     """
     global host
     data = {"username":username,"password":password, "key" : key, "id" : id}
-    url = "http://"+host+"/db/interface/add_sample_to_db.php"
+    url = host+"/db/interface/add_sample_to_db.php"
     for i in range(sample_count):
         sample = get_random_part(track["filename"], sample_length)
         sample.export("tmp.mp3",format="mp3")
@@ -74,7 +74,7 @@ def send_json_to_web(track, username, password, language):
         album = track["album"]["name"]
     print("Sending data for '{:}' by '{:}' on '{:}' ({:})".format(track["title"], track["band"]["name"], album, dances))
     data = {"username" : username, "password" : password, "track" : track, "language" : language}
-    url = "http://"+host+"/db/interface/add_json_to_db.php"
+    url = host+"/db/interface/add_json_to_db.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, json = data, headers = headers)
     print (str(response.content).replace("\\n","\n"))
@@ -122,7 +122,7 @@ def printUsage(argv):
 
 def checkAuth(username, password):
     data = {"username" : username, "password" : password}
-    url = "http://"+host+"/db/interface/check_auth.php"
+    url = host+"/db/interface/check_auth.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, json = data, headers = headers)
     print (str(response.content).replace("\\n","\n"))
