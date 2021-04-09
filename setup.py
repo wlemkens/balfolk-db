@@ -21,13 +21,14 @@ build_exe_options = {
 # console application).
 base = None
 if sys.platform == "win32":
-   base = "Win32GUI"
+    base = "Win32GUI"
     build_exe_options["include_files"] += ["tools/ffmpeg.exe",
                           "tools/ffprobe.exe",
                           "tools/ffplay.exe"]
 
 
 setup(  name = "music_wizard",
+        version = "1.1.0",
         description = "BalfolkDB Music Wizard",
         options = {"build_exe": build_exe_options},
         executables = [Executable("tools/music_wizard.py", base=base)])

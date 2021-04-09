@@ -8,7 +8,7 @@ Program for sending data from a music collection to the online database
 """
 global host
 host = "https://balfolk-db.eu"
-# host = "balfolkdb.localhost"
+#host = "http://balfolkdb-test"
 
 
 def send_mp3_to_web(track, username, password, language):
@@ -123,6 +123,7 @@ def printUsage(argv):
 def checkAuth(username, password):
     data = {"username" : username, "password" : password}
     url = host+"/db/interface/check_auth.php"
+    # url = host+"/interface/check_auth.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, json = data, headers = headers)
     print (str(response.content).replace("\\n","\n"))

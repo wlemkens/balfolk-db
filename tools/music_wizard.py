@@ -200,7 +200,7 @@ def setupSync():
         totalCount += fileCount
 
 def synchronize():
-    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress
+    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress, language
     if upload:
         if not tagged:
             if method == "purge":
@@ -227,8 +227,9 @@ def uploadTracks(fileList):
     global totalCount, fileCount, totalProgress, usr, pwd, language, download
     taskProgress = 0
     app.setLabel("task", "Uploading track data")
+    dance_list = get_dance_list()
     for file in fileList:
-        track = extract_info_from_file(file)
+        track = extract_info_from_file(file, dance_list, language)
         if track:
             track_json = track.json()
             message = send_json_to_web(track_json,usr, pwd, language)

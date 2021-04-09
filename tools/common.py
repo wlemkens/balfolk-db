@@ -15,7 +15,7 @@ supportedExtensions = [".mp3", ".flac"]
 
 global host
 host = "https://balfolk-db.eu"
-# host = "localhost"
+# host = "http://balfolkdb-test"
 
 def find_dances(track, db):
     '''
@@ -152,7 +152,16 @@ def getYear(date):
             return int(parts[2])
     return int(date)
 
-def extract_v1(file, filename):
+def parse_title_dance(title, dances, language):
+    p = re.compile("\(.*\)")
+    m = p.search(title)
+    if m:
+        dance = m.group()[1:-1].lower()
+        if dance in dances:
+            return [Dance(language, dance)]
+    return []
+
+def extract_v1(file, filename, dance_list, lang):
     '''
     Extract the music info from one of the two formats we can get the tags
     :param file: The opened mutagen file to analyse
@@ -170,12 +179,14 @@ def extract_v1(file, filename):
         albumband = None
         if albumartist:
             albumband = Band(albumartist)
-        language = Language("Nederlands")
+        language = Language(lang)
         dances = []
         if "genre" in file.keys():
             genres = parse_dance(file["genre"])
             for genre in genres:
                 dances += [Dance(language, genre)]
+        if len(dances) == 0:
+            dances = parse_title_dance(file["title"][0], dance_list)
         bpm = -1
         if "bpm" in file.keys():
             bpm = file["bpm"]
@@ -209,7 +220,7 @@ def hasTags(file, tags):
             return False
     return True
 
-def extract_v2(file, filename):
+def extract_v2(file, filename, dance_list, lang):
     '''
     Extract the music info from the other of the two formats we can get the tags
     :param file: The opened mutagen file to analyse
@@ -221,12 +232,14 @@ def extract_v2(file, filename):
     if hasTags(file, required_tags):
         artist = file["TPE1"].text[0]
         band = Band(artist)
-        language = Language("Nederlands")
+        language = Language(lang)
         dances = []
         if "TCON" in file.keys():
             genres = parse_dance(file["TCON"].text)
             for genre in genres:
                 dances += [Dance(language, genre)]
+        if len(dances) == 0:
+            dances = parse_title_dance(file["TIT2"].text[0], dance_list, language)
         bpm = -1
         if "TBPM" in file.keys():
             bpm = file["TBPM"].text[0]
@@ -254,7 +267,7 @@ def read_for_db(filename):
         binaryData = file.read()
         return binaryData
 
-def extract_info_from_file(path):
+def extract_info_from_file(path, dance_list, language):
     '''
     Extract the info from the mp3 or flac file
     :param path: filename
@@ -266,9 +279,9 @@ def extract_info_from_file(path):
 
         if file:
             if "artist" in file.keys() or "albumartist" in file.keys():
-                return extract_v1(file, path)
+                return extract_v1(file, path, dance_list, language)
             else:
-                return extract_v2(file, path)
+                return extract_v2(file, path, dance_list, language)
 
     return None
 
@@ -309,8 +322,9 @@ def getTracks(fileList):
     :return:         A list of tracks with id3 info
     '''
     tracks = []
+    dance_list = get_dance_list()
     for filename in fileList:
-        track = extract_info_from_file(filename)
+        track = extract_info_from_file(filename, dance_list)
         if track:
             tracks += [track]
     return tracks;
@@ -422,3 +436,10 @@ def find_dances_online(track, language):
                 track.dances += [dance]
     return found
 
+def get_dance_list():
+    url = host+"/db/interface/dances_all.php"
+    response = requests.post(url)
+# print (str(response.content).replace("\\n","\n"))
+    response_text = str(response.text)
+    response_data = json.loads(response_text)
+    return [dance.lower() for dance in response_data]

@@ -26,6 +26,7 @@ python setup.py build
 python setup.py bdist_msi
 ```
 
+
 I.e.
 ```
 cxfreeze tools\music_wizard.py --include-path="C:\Users\Wim Lemkens\Documents\Projects\balfolk-db\tools" --include-modules=tools,Music
@@ -38,6 +39,7 @@ source venv/bin/activate
 cxfreeze tools/music_wizard.py --include-path=</path/to/code> --include-modules=tools,Music,idna.idnadata
 ```
 
-I.e: ```
+I.e: 
+```
 cxfreeze balfolk-db/tools/music_wizard.py --include-path=balfolk-db/ --include-modules=tools,Music,idna.idnadata && mkdir -p dist/balfolk-db && cp -r balfolk-db/images dist/balfolk-db/images
 ```
