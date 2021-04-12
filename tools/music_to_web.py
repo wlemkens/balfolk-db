@@ -1,6 +1,7 @@
 import sys
 
 from tools.common import *
+import tempfile
 
 """
 Program for sending data from a music collection to the online database
@@ -45,12 +46,14 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
     global host
     data = {"username":username,"password":password, "key" : key, "id" : id}
     url = host+"/db/interface/add_sample_to_db.php"
+    tmpFilename = os.path.join(tempfile.gettempdir(), "tmp.mp3")
     for i in range(sample_count):
         sample = get_random_part(track["filename"], sample_length)
-        sample.export("tmp.mp3",format="mp3")
-        file = read_for_db("tmp.mp3")
-        files = {"sample": ("tmp.mp3", file)}
+        sample.export(tmpFilename,format="mp3")
+        file = read_for_db(tmpFilename)
+        files = {"sample": (tmpFilename, file)}
         response = requests.post(url, data = data, files=files)
+        os.unlink(tmpFilename)
 
 def send_json_to_web(track, username, password, language):
     """
