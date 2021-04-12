@@ -51,7 +51,7 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
         sample = get_random_part(track["filename"], sample_length)
         sample.export(tmpFilename,format="mp3")
         file = read_for_db(tmpFilename)
-        files = {"sample": (tmpFilename, file)}
+        files = {"sample": ("tmp.mp3", file)}
         response = requests.post(url, data = data, files=files)
         os.unlink(tmpFilename)
 
