@@ -7,8 +7,8 @@ from tools.common import *
 app = gui()
 if os.path.isfile("images/balfolkdb.ico"):
     app.setIcon("images/balfolkdb.ico")
-elif os.path.isfile("../images/balfolkdb.ico"):
-    app.setIcon("../images/balfolkdb.ico")
+elif os.path.isfile("../images/balfolkdb.png"):
+    app.setIcon("../images/balfolkdb.png")
 
 global language
 language = None
