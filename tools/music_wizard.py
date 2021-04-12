@@ -5,6 +5,10 @@ from tools.music_to_web import *
 from tools.common import *
 
 app = gui()
+if os.path.isfile("images/balfolkdb.ico"):
+    app.setIcon("images/balfolkdb.ico")
+elif os.path.isfile("../images/balfolkdb.ico"):
+    app.setIcon("../images/balfolkdb.ico")
 
 global language
 language = None
