@@ -3,12 +3,19 @@ import webbrowser
 
 from tools.music_to_web import *
 from tools.common import *
+import platform
 
 app = gui()
-if os.path.isfile("images/balfolkdb.ico"):
-    app.setIcon("images/balfolkdb.ico")
-elif os.path.isfile("../images/balfolkdb.png"):
-    app.setIcon("../images/balfolkdb.png")
+if platform.system() == 'Linux':
+    if os.path.isfile("images/balfolkdb.png"):
+        app.setIcon("images/balfolkdb.png")
+    elif os.path.isfile("../images/balfolkdb.png"):
+        app.setIcon("../images/balfolkdb.png")
+elif platform.system() == 'Windows':
+    if os.path.isfile("images/balfolkdb.ico"):
+        app.setIcon("images/balfolkdb.ico")
+    elif os.path.isfile("../images/balfolkdb.ico"):
+        app.setIcon("../images/balfolkdb.ico")
 
 global language
 language = None
