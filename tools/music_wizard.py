@@ -210,9 +210,8 @@ def synchronize():
             if method == "purge":
                 totalCount += fileCount
                 clearTags(fileList)
-            uploadTracks(fileList)
-        else:
-            uploadTracks(fileList)
+        uploadTracks(fileList)
+
     if download:
         downloadTracks(fileList)
 
