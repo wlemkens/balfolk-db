@@ -4,7 +4,6 @@ The tools to import and export the dances for bal folk music
 # Dependencies
 - Python3
   - Mutagen
-  - mysql-connector -> should be removed
   - pydub
   - appJar
   - requests
@@ -12,6 +11,9 @@ The tools to import and export the dances for bal folk music
 ## Not available via pip install
   - Tkinter
   
+# Windows pydub changes
+Use the supplied patches to patch pydub in order to prevent dos popups.
+
 ## cx-Freeze
 ### Dependencies
 #### System

@@ -1,0 +1,30 @@
+616c616,619
+<             p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+---
+>             si = subprocess.STARTUPINFO()
+>             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+>             si.wShowWindow = subprocess.SW_HIDE  # default
+>             p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=si)
+766,775c769,772
+<         if subprocess._mswindows:
+<             # Fix to prevent dos box popups
+<             startupinfo = subprocess.STARTUPINFO()
+<             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+<             startupinfo.wShowWindow = subprocess.SW_HIDE
+<             p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+<                                  startupinfo=startupinfo)
+<         else:
+<             p = subprocess.Popen(conversion_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+< #        p = subprocess.Popen(conversion_command, stdin=stdin_parameter, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+---
+>         si = subprocess.STARTUPINFO()
+>         si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+>         si.wShowWindow = subprocess.SW_HIDE  # default
+>         p = subprocess.Popen(conversion_command, stdin=stdin_parameter, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=si)
+971c968,971
+<             p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+---
+>             si = subprocess.STARTUPINFO()
+>             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+>             si.wShowWindow = subprocess.SW_HIDE  # default
+>             p = subprocess.Popen(conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=si)

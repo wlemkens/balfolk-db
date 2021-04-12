@@ -1,0 +1,27 @@
+7a8
+> import subprocess
+274c275,278
+<     res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE)
+---
+>     si = subprocess.STARTUPINFO()
+>     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+>     si.wShowWindow = subprocess.SW_HIDE # default
+>     res = Popen(command, stdin=stdin_parameter, stdout=PIPE, stderr=PIPE, startupinfo=si)
+334c338,341
+<     res = Popen(command, stdout=PIPE)
+---
+>     si = subprocess.STARTUPINFO()
+>     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+>     si.wShowWindow = subprocess.SW_HIDE  # default
+>     res = Popen(command, stdout=PIPE, startupinfo=si)
+339c346
+<         output = Popen(command, stdout=PIPE).communicate()[0].decode("utf-8")
+---
+>         output = Popen(command, stdout=PIPE, startupinfo=si).communicate()[0].decode("utf-8")
+385c392,395
+<     res = Popen(command, stdout=PIPE, stderr=PIPE)
+---
+>     si = subprocess.STARTUPINFO()
+>     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+>     si.wShowWindow = subprocess.SW_HIDE  # default
+>     res = Popen(command, stdout=PIPE, stderr=PIPE, startupinfo=si)
