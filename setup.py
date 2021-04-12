@@ -4,6 +4,7 @@ from cx_Freeze import setup, Executable
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = {
         "includes": ["tools","Music","tkinter"],
+        "excludes": ["sqlite3", "unittest", "test"],
         "include_files": [
                           ("images/login.png", "images/login.png"),
                           ("images/dances_local.png", "images/dances_local.png"),
@@ -25,9 +26,8 @@ executable = None
 options = None
 if sys.platform == "win32":
     base = "Win32GUI"
-    build_exe_options["include_files"] += ["tools/ffmpeg.exe",
-                          "tools/ffprobe.exe",
-                          "tools/ffplay.exe"]
+    build_exe_options["include_files"] += ["lib/ffmpeg.exe",
+                          "lib/ffprobe.exe"]
     shortcut_table = [
         ("ProgramMenuShortcut",  # Shortcut
          "ProgramMenuFolder",  # Directory_

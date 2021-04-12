@@ -1,5 +1,4 @@
 import os
-import mysql.connector
 import mutagen
 from pydub import AudioSegment
 import random
@@ -16,99 +15,6 @@ supportedExtensions = [".mp3", ".flac"]
 global host
 host = "https://balfolk-db.eu"
 # host = "http://balfolkdb-test"
-
-def find_dances(track, db):
-    '''
-    Check if a track already exists in the database, allowing for some misspellings
-    :param track: Track to check
-    :param db:
-    :return: True if the track already exists, the id of the Track will be set to the first found similar entry
-             False if no similar track could be found
-    '''
-    cursor = db.cursor()
-    sql = "SELECT * FROM tracks WHERE levenshtein(title, %s) <= %s"
-    val = (track.title, len(track.title)*0.2)
-    cursor.execute(sql, val)
-    result = cursor.fetchall()
-    track.dances = []
-    if len(result) > 0:
-        languageid = 1
-        track.id = result[0][0]
-        sql = "SELECT name, MIN(nameid) FROM dances AS d INNER JOIN tracks_dances AS td ON d.id = td.danceid WHERE td.trackid = %s AND d.languageid = %s"
-        val = (track.id, languageid)
-        cursor.execute(sql, val)
-        result = cursor.fetchall()
-        for res in result:
-            if res[0]:
-                # Might return None, so only add if there is an actual entry
-                track.dances += [Dance(languageid ,res[0])]
-        return True
-    return False
-
-
-def find_id(track, db):
-    '''
-    Check if a track already exists in the database, allowing for some misspellings
-    :param track: Track to check
-    :param db:
-    :return: True if the track already exists, the id of the Track will be set to the first found similar entry
-             False if no similar track could be found
-    '''
-    cursor = db.cursor()
-    sql = "SELECT * FROM tracks WHERE levenshtein(title, %s) <= %s"
-    val = (track.title, len(track.title)*0.2)
-    cursor.execute(sql, val)
-    result = cursor.fetchall()
-    if len(result) > 0:
-        track.id = result[0][0]
-        return True
-    return False
-
-# def find_dances(track, db):
-#     '''
-#     Check if a track already exists in the database, allowing for some misspellings
-#     :param track: Track to check
-#     :param db:
-#     :return: True if the track already exists, the id of the Track will be set to the first found similar entry
-#              False if no similar track could be found
-#     '''
-#     cursor = db.cursor()
-#     sql = "SELECT danceid FROM tracks_dances WHERE trackid = %s"
-#     val = (track.id, )
-#     cursor.execute(sql, val)
-#     result = cursor.fetchall()
-#     if len(result) > 0:
-#         track.id = result[0][0]
-#         return True
-#     return False
-
-def login_to_db():
-    '''
-    Try to login to the database using the credentials found in login.db
-    :return: the dabase connection
-    '''
-    login = None
-    password = None
-    url = None
-    with open("login.db") as f:
-        i = 0
-        for line in f:
-            if i == 0:
-                url = line.replace("\n","")
-            if i == 1:
-                login = line.replace("\n","")
-            if i == 2:
-                password = line.replace("\n","")
-            if i == 3:
-                database = line.replace("\n","")
-            i += 1
-    db = None
-    if password:
-        db = mysql.connector.connect(host = url, password = password, user = login, database = database)
-        print("Logged in to {:}".format(url))
-    else:
-        print("No database login data")
-    return db
 
 def lreplace(pattern, sub, string):
     """
