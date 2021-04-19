@@ -18,7 +18,12 @@ elif platform.system() == 'Windows':
         app.setIcon("../images/balfolkdb.ico")
 
 global language
+global method
+global tagged, strict_tags
 language = None
+method = None
+tagged = False
+strict_tags = False
 sendBtn = "Send my library and tagged dances to the server (Only meta data and short samples will be send)"
 dontUpdateBtn = "Don't update my library"
 addBtn = "Add dance tags in my library (Old genre tags are kept)"
@@ -123,16 +128,21 @@ def pressUpload1(button):
         downloadScreen1()
 
 def pressUpload2(button):
-    global tagged
+    global tagged, strict_tags
     if button == "All":
         tagged = True
+        strict_tags = False
     elif button == "Some":
         tagged = True
+        strict_tags = True
     else:
         tagged = False
+        strict_tags = True
     global language
     if language:
         selectLibraryScreen()
+    elif not tagged:
+        downloadScreen1()
     else:
         languageScreen1()
 
@@ -234,13 +244,20 @@ def clearTags(fileList):
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
 
 def uploadTracks(fileList):
-    global totalCount, fileCount, totalProgress, usr, pwd, language, download
+    global totalCount, fileCount, totalProgress, usr, pwd, language, download, strict_tags, tagged
     taskProgress = 0
     app.setLabel("task", "Uploading track data")
     dance_list = get_dance_list()
     for file in fileList:
         track = extract_info_from_file(file, dance_list, language)
         if track:
+            if tagged and strict_tags:
+                for i in range(len(track.dances)-1, -1, -1):
+                    dance = track.dances[i]
+                    if not dance.name.lower() in dance_list:
+                        track.dances = track.dances[:i]+track.dances[i+1:]
+            elif not tagged:
+                track.dances = []
             track_json = track.json()
             message = send_json_to_web(track_json,usr, pwd, language)
             if message:

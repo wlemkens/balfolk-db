@@ -157,7 +157,7 @@ def extract_v2(file, filename, dance_list, lang):
             total_tracks = -1
             album = Album(band, file["TALB"].text[0], year, total_tracks)
         track_nb = -1
-        if "TRCK" in file:
+        if "TRCK" in file.keys():
             track_nb = file["TRCK"].text[0]
         track = Track(album, track_nb, file["TIT2"].text[0], dances, band, filename, bpm)
         return track
