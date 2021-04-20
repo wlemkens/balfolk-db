@@ -6,9 +6,9 @@ import tempfile
 """
 Program for sending data from a music collection to the online database
 """
-global host
-host = "https://balfolk-db.eu"
-#host = "http://balfolkdb-test"
+# global host
+# host = "https://balfolk-db.eu"
+# host = "http://balfolkdb-test"
 
 
 def send_mp3_to_web(track, username, password, language):

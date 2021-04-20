@@ -1,5 +1,6 @@
 import sys
 from cx_Freeze import setup, Executable
+from tools.version import version
 
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = {
@@ -60,7 +61,7 @@ else:
 
 
 setup(  name = "music_wizard",
-        version = "1.1.1",
+        version = version,
         description = "BalfolkDB Music Wizard",
         options = options,
         executables = [Executable("tools/music_wizard.py",

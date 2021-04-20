@@ -3,9 +3,12 @@ import webbrowser
 
 from tools.music_to_web import *
 from tools.common import *
+from tools.version import version
+
 import platform
 
-app = gui()
+app = gui(handleArgs=False)
+
 if platform.system() == 'Linux':
     if os.path.isfile("images/balfolkdb.png"):
         app.setIcon("images/balfolkdb.png")
@@ -31,6 +34,47 @@ replaceBtn = "Replace genre tags of known dances in my library (Unknown tracks w
 clearBtn = "Clear all tags in my library before updating (Unknown tracks will have an empty genre tag)"
 replaceFirstBtn = "Replace tags of known dances in my library first and send unknown (If sending is not selected, it will only update my library)"
 libraryPath = ""
+
+def hasNewVersion():
+    url = host+"/db/interface/last_version.php"
+    headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
+    response = requests.post(url, headers = headers)
+    result = json.loads(response.content)
+
+    if platform.system() == 'Linux':
+        if result["linux"] > version:
+            return True
+    else:
+        if result["windows"] > version:
+            return True
+    return False
+
+def firstScreen():
+    if hasNewVersion():
+        versionScreen()
+    else:
+        firstToolScreen()
+
+def firstToolScreen():
+    if len(sys.argv) > 0:
+        usr = sys.argv[1]
+        pwd = sys.argv[2]
+        if checkAuth(usr, pwd):
+            uploadScreen1()
+        else:
+            loginScreen()
+            app.setLabel("title", "Wrong username or password")
+    else:
+        loginScreen()
+
+
+def versionScreen():
+    app.removeAllWidgets()
+    app.startFrame("Frame", row=0, column=0)
+    app.addImage("login", "../images/tool_update.png")
+    app.addLabel("title", "A new version of this tool is available")
+    app.addButtons(["Continue", "Download new version", "Cancel"], pressVersion)
+    app.stopFrame()
 
 def loginScreen():
     app.removeAllWidgets()
@@ -102,6 +146,16 @@ def selectLibrary(button):
     global libraryPath
     libraryPath = os.path.normpath(app.directoryBox(title="Music Library Path"))
     app.setLabel("library_path", "Library path: "+libraryPath)
+
+def pressVersion(button):
+    if button == "Continue":
+        firstToolScreen()
+    elif button == "Cancel":
+        app.stop()
+    else:
+        a_website = "https://balfolk-db.eu/db/view/sync.php"
+        webbrowser.open_new(a_website)
+        app.stop()
 
 def pressLogin(button):
     if button == "Continue":
@@ -303,7 +357,6 @@ def pressClose(button):
 def pressSyncOther(button):
     uploadScreen1()
 
-loginScreen()
-
+firstScreen()
 
 app.go()
