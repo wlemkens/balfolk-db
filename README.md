@@ -1,6 +1,13 @@
 # balfolk-db
 The tools to import and export the dances for bal folk music
 
+# Usage
+## Windows
+After installing you will find a shortcut in your start menu.
+
+## Linux
+You might need to install the correct python version (3.8) if you want to run the binary. 
+
 # Dependencies
 - Python3
   - Mutagen
