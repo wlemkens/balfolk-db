@@ -16,6 +16,7 @@ build_exe_options = {
                           ("images/prepsync.png", "images/prepsync.png"),
                           ("images/remote_to_local.png", "images/remote_to_local.png"),
                           ("images/sync.png", "images/sync.png"),
+                          ("images/tool_update.png", "images/tool_update.png"),
                           ("images/balfolkdb.ico", "images/balfolkdb.ico")
                           ]
 }
