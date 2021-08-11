@@ -57,7 +57,7 @@ def firstScreen():
 
 def firstToolScreen():
     global usr, pwd
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         usr = sys.argv[1]
         pwd = sys.argv[2]
         if checkAuth(usr, pwd):
