@@ -92,7 +92,7 @@ def extract_v1(file, filename, dance_list, lang):
             for genre in genres:
                 dances += [Dance(language, genre)]
         if len(dances) == 0:
-            dances = parse_title_dance(file["title"][0], dance_list)
+            dances = parse_title_dance(file["title"][0], dance_list, language)
         bpm = -1
         if "bpm" in file.keys():
             bpm = file["bpm"]
@@ -223,6 +223,7 @@ def getFileList(directory):
 
 def getTracks(fileList):
     '''
+    OBSOLETE IT SEEMS
     Parse all the info of the tracks
     :param fileList: A list of file names to get the info for
     :return:         A list of tracks with id3 info
@@ -263,7 +264,8 @@ def update_file(filename, language, clear_genre, append_genre):
     """
     found = False
     dances_found = False
-    track = extract_info_from_file(filename)
+    dance_list = get_dance_list()
+    track = extract_info_from_file(filename, dance_list, language)
     if track:
         found = find_dances_online(track, language)
         if len(track.dances) > 0:
