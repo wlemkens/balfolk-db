@@ -63,8 +63,8 @@ def parse_title_dance(title, dances, language):
     m = p.search(title)
     if m:
         dance = m.group()[1:-1].lower()
-        if dance in dances:
-            return [Dance(language, dance)]
+        if dance in dances.keys():
+            return [Dance(dances[dance], dance)]
     return []
 
 def extract_v1(file, filename, dance_list, lang):
@@ -91,8 +91,6 @@ def extract_v1(file, filename, dance_list, lang):
             genres = parse_dance(file["genre"])
             for genre in genres:
                 dances += [Dance(language, genre)]
-        if len(dances) == 0:
-            dances = parse_title_dance(file["title"][0], dance_list, language)
         bpm = -1
         if "bpm" in file.keys():
             bpm = file["bpm"]
@@ -144,8 +142,6 @@ def extract_v2(file, filename, dance_list, lang):
             genres = parse_dance(file["TCON"].text)
             for genre in genres:
                 dances += [Dance(language, genre)]
-        if len(dances) == 0:
-            dances = parse_title_dance(file["TIT2"].text[0], dance_list, language)
         bpm = -1
         if "TBPM" in file.keys():
             bpm = file["TBPM"].text[0]
@@ -189,6 +185,24 @@ def extract_info_from_file(path, dance_list, language):
             else:
                 return extract_v2(file, path, dance_list, language)
 
+    return None
+
+def extract_dance_from_title(path, dance_list, language):
+    '''
+    Extract the info from the mp3 or flac file
+    :param path: filename
+    :return:     None if not enough info was found
+                 A Track containing the found info otherwise
+    '''
+    if (os.path.splitext(path)[1] in [".mp3",".flac"]):
+        file = mutagen.File(path)
+
+        if file:
+            if "artist" in file.keys() or "albumartist" in file.keys():
+                # If we didn't find any dances or we didn't look for it, at least try to find the dance in the title
+                return parse_title_dance(file["title"][0], dance_list, language)
+            else:
+                return parse_title_dance(file["TIT2"].text[0], dance_list, language)
     return None
 
 def get_random_part(track, part_length):
@@ -350,4 +364,4 @@ def get_dance_list():
 # print (str(response.content).replace("\\n","\n"))
     response_text = str(response.text)
     response_data = json.loads(response_text)
-    return [dance.lower() for dance in response_data]
+    return {dance["dance"].lower() : Language(dance["language"]) for dance in response_data}

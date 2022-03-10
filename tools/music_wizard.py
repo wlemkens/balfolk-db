@@ -300,6 +300,9 @@ def clearTags(fileList):
 
 def uploadTracks(fileList):
     global totalCount, fileCount, totalProgress, usr, pwd, language, download, strict_tags, tagged
+    if not language:
+        # If the language was not set because there were no tags, assume the titles are in Dutch
+        language = "Dutch"
     taskProgress = 0
     app.setLabel("task", "Uploading track data")
     dance_list = get_dance_list()
@@ -309,10 +312,10 @@ def uploadTracks(fileList):
             if tagged and strict_tags:
                 for i in range(len(track.dances)-1, -1, -1):
                     dance = track.dances[i]
-                    if not dance.name.lower() in dance_list:
+                    if not dance.name.lower() in dance_list.keys():
                         track.dances = track.dances[:i]+track.dances[i+1:]
-            elif not tagged:
-                track.dances = []
+            elif not tagged or len(track.dances) == 0:
+                track.dances = extract_dance_from_title(file, dance_list, language)
             track_json = track.json()
             message = send_json_to_web(track_json,usr, pwd, language)
             if message:
