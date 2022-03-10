@@ -56,7 +56,11 @@ def getYear(date):
             return int(parts[0])
         else:
             return int(parts[2])
-    return int(date)
+    try:
+        d = int(date)
+        return d
+    except ValueError:
+        return None
 
 def parse_title_dance(title, dances, language):
     p = re.compile("\(.*\)")
