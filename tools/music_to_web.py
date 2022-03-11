@@ -49,11 +49,12 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
     tmpFilename = os.path.join(tempfile.gettempdir(), "tmp.mp3")
     for i in range(sample_count):
         sample = get_random_part(track["filename"], sample_length)
-        sample.export(tmpFilename,format="mp3")
-        file = read_for_db(tmpFilename)
-        files = {"sample": ("tmp.mp3", file)}
-        response = requests.post(url, data = data, files=files)
-        os.unlink(tmpFilename)
+        if sample:
+            sample.export(tmpFilename,format="mp3")
+            file = read_for_db(tmpFilename)
+            files = {"sample": ("tmp.mp3", file)}
+            response = requests.post(url, data = data, files=files)
+            os.unlink(tmpFilename)
 
 def send_json_to_web(track, username, password, language):
     """
@@ -104,10 +105,13 @@ def extract_info_from_collection(directory, language, username, password):
     for dirName, subdirList, fileList in os.walk(directory):
         for fname in fileList:
             filename = os.path.join(dirName, fname)
-            track = extract_info_from_file(filename)
-            if track:
-                track_json = track.json()
-                send_json_to_web(track_json,username, password, language)
+            try:
+                track = extract_info_from_file(filename)
+                if track:
+                    track_json = track.json()
+                    send_json_to_web(track_json,username, password, language)
+            except Exception as e:
+                print("Error : {:}")
 
     print ("Found {:} dances".format(len(db)))
     return db

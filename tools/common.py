@@ -219,9 +219,12 @@ def get_random_part(track, part_length):
     sound = AudioSegment.from_file(track)
     start = 0
     end = len(sound) - part_length * 1000
-    part_start = random.randrange(start, end)
-    part_end = part_start + part_length * 1000
-    return sound[part_start:part_end]
+    if end > 0:
+        part_start = random.randrange(start, end)
+        part_end = part_start + part_length * 1000
+        return sound[part_start:part_end]
+    else:
+        return None
 
 def getFileList(directory):
     '''
