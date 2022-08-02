@@ -311,10 +311,10 @@ def update_file(filename, language, clear_genre, append_genre):
                 if not append_genre:
                     file["genre"] = []
                 for dance in track.dances:
-                    if not "genre" in file.keys():
+                    if not "genre" in file.keys() or len(file["genre"]) == 0:
                         file["genre"] = [dance.name]
                     elif not dance.name in file["genre"]:
-                            file["genre"] += [dance.name]
+                            file["genre"] = [file["genre"][0]+";"+dance.name]
                 if track.bpm > 0:
                     file["bpm"] = str(track.bpm)
                 file.save()
