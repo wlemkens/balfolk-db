@@ -290,6 +290,8 @@ def update_file(filename, language, clear_genre, append_genre):
                     found: If the track was known by the online database
                     dances_found: If any dance data was found for the track
     """
+    if clear_genre:
+        clearFile(filename)
     found = False
     dances_found = False
     dance_list = get_dance_list()
