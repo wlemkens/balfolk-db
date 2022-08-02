@@ -181,13 +181,17 @@ def extract_info_from_file(path, dance_list, language):
                  A Track containing the found info otherwise
     '''
     if (os.path.splitext(path)[1] in [".mp3",".flac"]):
-        file = mutagen.File(path)
+        try:
 
-        if file:
-            if "artist" in file.keys() or "albumartist" in file.keys():
-                return extract_v1(file, path, dance_list, language)
-            else:
-                return extract_v2(file, path, dance_list, language)
+            file = mutagen.File(path)
+
+            if file:
+                if "artist" in file.keys() or "albumartist" in file.keys():
+                    return extract_v1(file, path, dance_list, language)
+                else:
+                    return extract_v2(file, path, dance_list, language)
+        except:
+            print("Failed to load file '{:}'".format(path))
 
     return None
 
@@ -262,14 +266,17 @@ def clearFile(filename):
     Clear all the genre tags of the file
     :param filename:
     '''
-    file = mutagen.File(filename)
-    if "genre" in file.keys():
-        file["genre"] = []
-        file.save()
-    else:
-        file = ID3(filename)
-        file.delall("TCON")
-        file.save()
+    try:
+        file = mutagen.File(filename)
+        if "genre" in file.keys():
+            file["genre"] = []
+            file.save()
+        else:
+            file = ID3(filename)
+            file.delall("TCON")
+            file.save()
+    except:
+        pass
 
 def update_file(filename, language, clear_genre, append_genre):
     """
