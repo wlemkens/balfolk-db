@@ -2,6 +2,7 @@ import sys
 
 from tools.common import *
 import tempfile
+import logging
 
 """
 Program for sending data from a music collection to the online database
@@ -23,7 +24,7 @@ def send_mp3_to_web(track, username, password, language):
     data = {"username" : username, "password" : password, "language" : language}
     global host
     # host = "localhost"
-    url = host+"/db/interface/add_mp3_to_db.php"
+    url = host+"/interface/add_mp3_to_db.php"
     file = read_for_db(track["filename"])
     files = {"track": ("tmp.mp3", file)}
     response = requests.post(url, data = data, files = files)
@@ -45,7 +46,7 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
     """
     global host
     data = {"username":username,"password":password, "key" : key, "id" : id}
-    url = host+"/db/interface/add_sample_to_db.php"
+    url = host+"/interface/add_sample_to_db.php"
     tmpFilename = os.path.join(tempfile.gettempdir(), "tmp.mp3")
     for i in range(sample_count):
         sample = get_random_part(track["filename"], sample_length)
@@ -77,20 +78,26 @@ def send_json_to_web(track, username, password, language):
         album = track["album"]["name"]
     print("Sending data for '{:}' by '{:}' on '{:}' ({:})".format(track["title"], track["band"]["name"], album, dances))
     data = {"username" : username, "password" : password, "track" : track, "language" : language}
-    url = host+"/db/interface/add_json_to_db.php"
+    url = host+"/interface/add_json_to_db.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, json = data, headers = headers)
     print (str(response.content).replace("\\n","\n"))
     reply_parts = str(response.content)[2:-1].split(" ");
-    if reply_parts[1].isdigit():
+    if len(reply_parts) == 3 and reply_parts[1].isdigit():
         samples_needed = int(reply_parts[1])
         track_key = reply_parts[0]
         id = reply_parts[2]
-        if id == 0:
+        if id == '0':
+            logging.error("Failed to submit track '{:}' from band '{:}' on album '{:}'".format(track["title"], track["band"]["name"], album))
             return "Failed to submit track '{:}' from band '{:}' on album '{:}'".format(track["title"], track["band"]["name"], album)
         if samples_needed > 0:
-            send_samples(track, username, password, track_key, samples_needed, id, 20)
+            print(f"Sending {samples_needed} samples")
+            send_samples(track, username, password, track_key, samples_needed, id, 30)
     else:
+        logging.error(
+            "Invalid respone when submitting track '{:}' from band '{:}' on album '{:}'".format(track["title"], track["band"]["name"],
+                                                                                 album))
+        logging.error(str(response.content))
         return str(response.content)
     return None
 
@@ -128,7 +135,7 @@ def printUsage(argv):
 
 def checkAuth(username, password):
     data = {"username" : username, "password" : password}
-    url = host+"/db/interface/check_auth.php"
+    url = host+"/interface/check_auth.php"
     # url = host+"/interface/check_auth.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, json = data, headers = headers)

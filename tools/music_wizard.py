@@ -6,8 +6,10 @@ from tools.common import *
 from tools.version import version
 
 import platform
+import logging
 
 app = gui(handleArgs=False)
+app.EVENT_SIZE = 10000
 
 if platform.system() == 'Linux':
     if os.path.isfile("images/balfolkdb.png"):
@@ -36,7 +38,7 @@ replaceFirstBtn = "Replace tags of known dances in my library first and send unk
 libraryPath = ""
 
 def hasNewVersion():
-    url = host+"/db/interface/last_version.php"
+    url = host+"/interface/last_version.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
     response = requests.post(url, headers = headers)
     result = json.loads(response.content)
@@ -154,7 +156,7 @@ def pressVersion(button):
     elif button == "Cancel":
         app.stop()
     else:
-        a_website = "https://balfolk-db.eu/db/view/sync.php"
+        a_website = "https://balfolk-db.eu/view/sync.php"
         webbrowser.open_new(a_website)
         app.stop()
 
@@ -168,7 +170,7 @@ def pressLogin(button):
         else:
             app.setLabel("title", "Wrong username or password")
     elif button == "Create account":
-        a_website = "https://balfolk-db.eu/db/view/create_account.php"
+        a_website = "https://balfolk-db.eu/view/create_account.php"
         webbrowser.open_new(a_website)
     else:
         app.stop()
@@ -290,11 +292,11 @@ def synchronize():
 def clearTags(fileList):
     global totalCount, fileCount, totalProgress
     taskProgress = 0
+    app.queueFunction(app.setLabel, "task", "Clearing tags")
     for file in fileList:
         clearFile(file)
         taskProgress += 1
         totalProgress += 1
-        app.queueFunction(app.setLabel, "task", "Clearing tags")
         app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
 
@@ -320,7 +322,7 @@ def uploadTracks(fileList):
             message = send_json_to_web(track_json,usr, pwd, language)
             if message:
                 app.setLabel("task", message)
-                return None
+                # return None
 
         taskProgress += 1
         totalProgress += 5
@@ -360,6 +362,8 @@ def pressClose(button):
 
 def pressSyncOther(button):
     uploadScreen1()
+
+logging.basicConfig(filename='music_wizard.log', encoding='utf-8', level=logging.DEBUG)
 
 firstScreen()
 

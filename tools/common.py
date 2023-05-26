@@ -355,7 +355,7 @@ def find_dances_online(track, language):
     global host
     print("Querying for '{:}' by '{:}'".format(track.title, track.band.name))
     data = {"track":track.json(), "language":language}
-    url = host+"/db/interface/query_db.php"
+    url = host+"/interface/query_db.php"
     response = requests.post(url, json = data)
     # print (str(response.content).replace("\\n","\n"))
     response_text = str(response.text)
@@ -375,7 +375,7 @@ def find_dances_online(track, language):
     return found
 
 def get_dance_list():
-    url = host+"/db/interface/dances_all.php"
+    url = host+"/interface/dances_all.php"
     response = requests.post(url)
 # print (str(response.content).replace("\\n","\n"))
     response_text = str(response.text)
