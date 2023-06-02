@@ -307,6 +307,12 @@ def update_file(filename, language, clear_genre, append_genre):
             print("Found '{:} by {:}' : '{:}'".format(track.title, track.band.name, dances_str))
 
             file = mutagen.File(filename)
+            bpm = track.bpm
+            if type(track.bpm) == list:
+                if len(track.bpm) > 0:
+                    bpm = track.bpm[0]
+                else:
+                    bpm = 0
             if "title" in file.keys():
                 if not append_genre:
                     file["genre"] = []
@@ -315,8 +321,8 @@ def update_file(filename, language, clear_genre, append_genre):
                         file["genre"] = [dance.name]
                     elif not dance.name in file["genre"]:
                             file["genre"] = [file["genre"][0]+";"+dance.name]
-                if track.bpm > 0:
-                    file["bpm"] = str(track.bpm)
+                if int(bpm) > 0:
+                    file["bpm"] = str(bpm)
                 file.save()
             else:
                 file = ID3(filename)
@@ -325,9 +331,9 @@ def update_file(filename, language, clear_genre, append_genre):
                 for dance in track.dances:
                     if not "TCON" in file.keys() or not dance in file["TCON"]:
                         file.add(TCON(encoding=3, text=dance.name))
-                if track.bpm > 0:
+                if int(bpm) > 0:
                     file.delall("TBPM")
-                    file.add(TBPM(encoding=3, text=[track.bpm]))
+                    file.add(TBPM(encoding=3, text=[bpm]))
 
 
             file.save()
