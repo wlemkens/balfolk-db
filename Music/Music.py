@@ -3,9 +3,10 @@ class Band(object):
     def __init__(self, name):
         self.id = None
         self.name = name
+        self.mbid = None          # MusicBrainz Artist ID if the file already carries one
 
     def json(self):
-        return { "id" : self.id, "name" : self.name}
+        return { "id" : self.id, "name" : self.name, "mbid" : self.mbid}
 
     def flat_json(self):
         return { "band_name" : self.name}
@@ -17,12 +18,13 @@ class Album(object):
         self.name = name
         self.year = year #
         self.nb_tracks = nb_tracks
+        self.mbid = None          # MusicBrainz Release ID if the file already carries one
 
     def json(self):
         band = {}
         if self.band:
             band = self.band.json()
-        return { "id" : self.id, "band" : band, "name" : self.name, "year" : self.year, "nb_tracks" : self.nb_tracks}
+        return { "id" : self.id, "band" : band, "name" : self.name, "year" : self.year, "nb_tracks" : self.nb_tracks, "mbid" : self.mbid}
 
     def flat_json(self):
         band_json = {}
@@ -42,6 +44,9 @@ class Track(object):
         self.band = band
         self.filename = filename
         self.bpm = bpm
+        self.fingerprint = None   # Chromaprint (AcoustID-compatible) acoustic fingerprint
+        self.duration = None      # seconds; gates fingerprint matching server-side
+        self.mbid = None          # MusicBrainz Recording ID if the file already carries one
 
     def json(self):
         dances_json = []
@@ -51,7 +56,7 @@ class Track(object):
         album = {}
         if self.album:
             album = self.album.json()
-        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename, "bpm" : self.bpm}
+        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename, "bpm" : self.bpm, "fingerprint" : self.fingerprint, "duration" : self.duration, "mbid" : self.mbid}
 
     def flat_json(self):
         dances_json = []

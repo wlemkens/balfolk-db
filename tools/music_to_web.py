@@ -27,7 +27,7 @@ def send_mp3_to_web(track, username, password, language):
     url = host+"/interface/add_mp3_to_db.php"
     file = read_for_db(track["filename"])
     files = {"track": ("tmp.mp3", file)}
-    response = requests.post(url, data = data, files = files)
+    response = post_with_retries(url, data = data, files = files, timeout = (10, 300))
     print (str(response.content).replace("\\n","\n"))
     print("ok")
 
@@ -54,7 +54,7 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
             sample.export(tmpFilename,format="mp3")
             file = read_for_db(tmpFilename)
             files = {"sample": ("tmp.mp3", file)}
-            response = requests.post(url, data = data, files=files)
+            response = post_with_retries(url, data = data, files=files, timeout = (10, 300))
             os.unlink(tmpFilename)
 
 def send_json_to_web(track, username, password, language):
@@ -80,7 +80,7 @@ def send_json_to_web(track, username, password, language):
     data = {"username" : username, "password" : password, "track" : track, "language" : language}
     url = host+"/interface/add_json_to_db.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
-    response = requests.post(url, json = data, headers = headers)
+    response = post_with_retries(url, json = data, headers = headers, timeout = (10, 60))
     print (str(response.content).replace("\\n","\n"))
     reply_parts = str(response.content)[2:-1].split(" ");
     if len(reply_parts) == 3 and reply_parts[1].isdigit():
@@ -138,7 +138,7 @@ def checkAuth(username, password):
     url = host+"/interface/check_auth.php"
     # url = host+"/interface/check_auth.php"
     headers = {'Content-type': 'application/json', 'charset':'UTF-8'}
-    response = requests.post(url, json = data, headers = headers)
+    response = post_with_retries(url, json = data, headers = headers, timeout = (10, 60))
     print (str(response.content).replace("\\n","\n"))
     return int(response.content)
 

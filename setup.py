@@ -29,7 +29,8 @@ options = None
 if sys.platform == "win32":
     base = "Win32GUI"
     build_exe_options["include_files"] += ["lib/ffmpeg.exe",
-                          "lib/ffprobe.exe"]
+                          "lib/ffprobe.exe",
+                          "lib/fpcalc.exe"]
     shortcut_table = [
         ("ProgramMenuShortcut",  # Shortcut
          "ProgramMenuFolder",  # Directory_
@@ -58,6 +59,10 @@ if sys.platform == "win32":
     }
 
 else:
+    # Bundle static Linux ffmpeg/ffprobe next to the executable so pydub finds
+    # them (see tools/common.py _bundled) and the user installs nothing.
+    build_exe_options["include_files"] += [("lib/ffmpeg", "ffmpeg"),
+                          ("lib/ffprobe", "ffprobe")]
     options = {"build_exe": build_exe_options}
 
 
@@ -67,6 +72,8 @@ setup(  name = "music_wizard",
         options = options,
         executables = [Executable("tools/music_wizard.py",
                                   base=base,
-                                  icon="images/balfolkdb.ico")
+                                  # appimagetool only accepts png/svg/xpm; Windows wants ico.
+                                  icon="images/balfolkdb.ico" if sys.platform == "win32"
+                                       else "images/balfolkdb.png")
 ])
 

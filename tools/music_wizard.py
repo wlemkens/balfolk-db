@@ -1,5 +1,6 @@
 from appJar import gui
 import webbrowser
+import requests
 
 from tools.music_to_web import *
 from tools.common import *
@@ -9,18 +10,15 @@ import platform
 import logging
 
 app = gui(handleArgs=False)
-app.EVENT_SIZE = 10000
+app.EVENT_SIZE = 10000  # type: ignore  # appJar declares this as literal 1000; overriding is intentional
 
-if platform.system() == 'Linux':
-    if os.path.isfile("images/balfolkdb.png"):
-        app.setIcon("images/balfolkdb.png")
-    elif os.path.isfile("../images/balfolkdb.png"):
-        app.setIcon("../images/balfolkdb.png")
-elif platform.system() == 'Windows':
-    if os.path.isfile("images/balfolkdb.ico"):
-        app.setIcon("images/balfolkdb.ico")
-    elif os.path.isfile("../images/balfolkdb.ico"):
-        app.setIcon("../images/balfolkdb.ico")
+# appJar resolves image paths relative to the main script's dir (tools/), not cwd,
+# so anchor to the project root explicitly with an absolute path.
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+icon_name = "images/balfolkdb.ico" if platform.system() == 'Windows' else "images/balfolkdb.png"
+icon_path = os.path.join(project_root, icon_name)
+if os.path.isfile(icon_path):
+    app.setIcon(icon_path)
 
 global language
 global method
@@ -147,7 +145,10 @@ def selectLibraryScreen():
 
 def selectLibrary(button):
     global libraryPath
-    libraryPath = os.path.normpath(app.directoryBox(title="Music Library Path"))
+    selected = app.directoryBox(title="Music Library Path")
+    if selected is None:  # user cancelled the dialog
+        return
+    libraryPath = os.path.normpath(selected)
     app.setLabel("library_path", "Library path: "+libraryPath)
 
 def pressVersion(button):
@@ -257,37 +258,72 @@ def prepareSynchronization():
         app.addLabel("This might take some time")
     app.addButtons(["Synchronize Library", "Cancel"], pressSynchronize)
 
-def setupSync():
+def buildSyncScreen():
     app.removeAllWidgets()
-    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress
     app.addImage("sync", "../images/sync.png")
     app.addLabel("Synchronizing")
-    app.addLabel("task","Preparing")
-    fileCount = len(fileList)
-    totalCount = 0
+    app.addLabel("task", "Preparing")
     app.addLabel("Overall")
     app.addMeter("progress")
-    app.setMeter("progress", 0)
     app.addLabel("Task")
     app.addMeter("task_progress")
-    app.setMeter("task_progress", 0)
+
+def setupSync():
+    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress
+    global uploadIndex, downloadIndex, clearedTags, nbDancesFound
+    buildSyncScreen()
+    fileCount = len(fileList)
+    totalCount = 0
     totalProgress = 0
+    uploadIndex = 0
+    downloadIndex = 0
+    clearedTags = False
+    nbDancesFound = 0
+    app.setMeter("progress", 0)
+    app.setMeter("task_progress", 0)
     if upload:
         totalCount += 5*fileCount
     if download:
         totalCount += fileCount
 
 def synchronize():
-    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress, language
-    if upload:
-        if not tagged:
-            if method == "purge":
+    global libraryPath, fileList, upload, download, method, totalCount, fileCount, totalProgress, language, clearedTags
+    try:
+        if upload:
+            if not tagged and method == "purge" and not clearedTags:
                 totalCount += fileCount
                 clearTags(fileList)
-        uploadTracks(fileList)
+                clearedTags = True
+            uploadTracks(fileList)
 
-    if download:
-        downloadTracks(fileList)
+        if download:
+            downloadTracks(fileList)
+    except requests.exceptions.RequestException as e:
+        logging.exception("Network error during synchronization")
+        app.queueFunction(syncError, "Network error: could not reach the server.",
+                          "Check your internet connection and try again.\n\n" + str(e))
+    except Exception as e:
+        # Any other failure would otherwise kill the worker thread silently and
+        # freeze the progress screen. Surface it (full traceback goes to the log).
+        logging.exception("Unexpected error during synchronization")
+        app.queueFunction(syncError, "Something went wrong during synchronization.",
+                          "The full error was written to music_wizard.log\n\n" + repr(e))
+
+def syncError(title, detail):
+    app.removeAllWidgets()
+    app.addLabel("error_title", title)
+    app.addLabel("error_detail", detail)
+    app.addButton("Try again", pressRetry)
+    app.addButton("Close", pressClose)
+
+def pressRetry(button):
+    # Resume from where the failure stopped: keep the indices/counters, just
+    # rebuild the progress screen and re-run. Already-processed files are skipped.
+    global totalCount, totalProgress
+    buildSyncScreen()
+    if totalCount:
+        app.setMeter("progress", 100.0 * totalProgress / totalCount)
+    app.thread(synchronize)
 
 def clearTags(fileList):
     global totalCount, fileCount, totalProgress
@@ -301,14 +337,14 @@ def clearTags(fileList):
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
 
 def uploadTracks(fileList):
-    global totalCount, fileCount, totalProgress, usr, pwd, language, download, strict_tags, tagged
+    global totalCount, fileCount, totalProgress, usr, pwd, language, download, strict_tags, tagged, uploadIndex
     if not language:
         # If the language was not set because there were no tags, assume the titles are in Dutch
         language = "Dutch"
-    taskProgress = 0
     app.setLabel("task", "Uploading track data")
     dance_list = get_dance_list()
-    for file in fileList:
+    while uploadIndex < len(fileList):
+        file = fileList[uploadIndex]
         track = extract_info_from_file(file, dance_list, language)
         if track:
             if tagged and strict_tags:
@@ -324,27 +360,29 @@ def uploadTracks(fileList):
                 app.setLabel("task", message)
                 # return None
 
-        taskProgress += 1
+        # advance only after the file is fully processed, so a network failure
+        # mid-loop resumes on this same file rather than skipping it
+        uploadIndex += 1
         totalProgress += 5
-        app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
+        app.queueFunction(app.setMeter, "task_progress", 100.0 * uploadIndex / fileCount)
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
     if not download:
         app.queueFunction(done)
 
 def downloadTracks(fileList):
-    global totalCount, fileCount, totalProgress, language, method, nbDancesFound
-    nbDancesFound = 0
+    global totalCount, fileCount, totalProgress, language, method, nbDancesFound, downloadIndex
     purge = method == "purge"
     append = method == "add"
     app.setLabel("task", "Downloading track data")
-    taskProgress = 0
-    for file in fileList:
+    while downloadIndex < len(fileList):
+        file = fileList[downloadIndex]
         track, found, dancesFound = update_file(file, language, purge, append)
         if dancesFound:
             nbDancesFound += 1
-        taskProgress += 1
+        # advance only after success, so a network failure resumes on this file
+        downloadIndex += 1
         totalProgress += 1
-        app.queueFunction(app.setMeter, "task_progress", 100.0 * taskProgress / fileCount)
+        app.queueFunction(app.setMeter, "task_progress", 100.0 * downloadIndex / fileCount)
         app.queueFunction(app.setMeter, "progress", 100.0 * totalProgress / totalCount)
     app.queueFunction(done)
 

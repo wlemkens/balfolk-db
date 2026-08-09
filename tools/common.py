@@ -1,10 +1,28 @@
 import os
+import sys
+import shutil
+import subprocess
 import mutagen
 from pydub import AudioSegment
 import random
 import json
+import time
+import logging
+
+def _bundled(name):
+    # frozen build: ffmpeg/ffprobe sit next to the executable (or in the AppImage);
+    # dev run: fall back to whatever is on PATH.
+    if getattr(sys, "frozen", False):
+        p = os.path.join(os.path.dirname(sys.executable), name)
+        if os.path.isfile(p):
+            return p
+    return shutil.which(name)
+
+AudioSegment.converter = _bundled("ffmpeg.exe" if sys.platform == "win32" else "ffmpeg")
+AudioSegment.ffprobe   = _bundled("ffprobe.exe" if sys.platform == "win32" else "ffprobe")
 
 from Music.Music import *
+from tools.version import version
 from mutagen.id3 import ID3, TCON, TBPM
 import requests
 import re
@@ -15,6 +33,85 @@ supportedExtensions = [".mp3", ".flac"]
 global host
 host = "https://balfolk-db.eu"
 # host = "http://balfolkdb-test"
+
+def post_with_retries(*args, retries=5, backoff=2, **kwargs):
+    """requests.post that retries transient network failures before giving up.
+    Retries connection errors and timeouts up to `retries` times; on the final
+    failure it re-raises so the caller (the sync worker) shows the resume prompt.
+    ponytail: retries POSTs including the upload writes, so a read-timeout after
+    the server already processed a request could double-submit. Fine for this
+    tool's endpoints; add idempotency keys if that ever becomes a real problem."""
+    last_exc = None
+    for attempt in range(retries + 1):
+        try:
+            return requests.post(*args, **kwargs)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            last_exc = e
+            logging.warning("POST failed (attempt %d/%d): %s", attempt + 1, retries + 1, e)
+            if attempt < retries:
+                time.sleep(backoff)
+    raise last_exc
+
+def _parse_fpcalc(stdout):
+    """(fingerprint string, duration seconds) from fpcalc's KEY=VALUE stdout, or (None, None)."""
+    d = dict(l.split("=", 1) for l in stdout.strip().splitlines() if "=" in l)
+    fp = d.get("FINGERPRINT")
+    if fp is None:
+        return None, None
+    return fp, float(d["DURATION"])
+
+def fpcalc(path):
+    """Chromaprint fingerprint + duration for an audio file, or (None, None) on failure.
+    This is the same tool AcoustID/MusicBrainz use, so the compressed (non-raw) fingerprint
+    doubles as an AcoustID lookup key server-side. ponytail: no cache (folk caches because it
+    re-scans); each file is fingerprinted once per run here — add a cache if runs get slow."""
+    binary = _bundled("fpcalc.exe" if sys.platform == "win32" else "fpcalc") or "fpcalc"
+    try:
+        out = subprocess.run([binary, "-length", "120", path],
+                             capture_output=True, text=True, timeout=90)
+        return _parse_fpcalc(out.stdout)
+    except Exception:
+        return None, None
+
+def read_mbids(path):
+    """MusicBrainz recording/release/artist IDs from existing tags (Picard writes them), as a
+    dict of the ones present. Free global join keys — no network call needed."""
+    tags = {"mbid": "musicbrainz_trackid", "album_mbid": "musicbrainz_albumid",
+            "artist_mbid": "musicbrainz_artistid",
+            "albumartist_mbid": "musicbrainz_albumartistid"}
+    try:
+        f = mutagen.File(path, easy=True)
+        if f and f.tags:
+            return {k: f.tags[t][0] for k, t in tags.items() if f.tags.get(t)}
+    except Exception:
+        pass
+    return {}
+
+_mb_last_call = 0
+
+def musicbrainz_lookup(title, artist):
+    """Recording MBID from the MusicBrainz search API, or None when nothing scores high
+    enough. ponytail: top hit only, no duration/album cross-check — add one if wrong
+    matches show up. MB allows 1 request/s, hence the pacing."""
+    global _mb_last_call
+    if not title or not artist:
+        return None
+    query = 'recording:"{:}" AND artist:"{:}"'.format(title.replace('"', ''), artist.replace('"', ''))
+    try:
+        wait = 1 - (time.time() - _mb_last_call)
+        if wait > 0:
+            time.sleep(wait)
+        _mb_last_call = time.time()
+        response = requests.get("https://musicbrainz.org/ws/2/recording",
+                                params={"query": query, "limit": 1, "fmt": "json"},
+                                headers={"User-Agent": "balfolk-db-music-wizard/{:} (https://balfolk-db.eu)".format(version)},
+                                timeout=(10, 30))
+        recordings = response.json().get("recordings", [])
+        if recordings and recordings[0].get("score", 0) >= 90:
+            return recordings[0]["id"]
+    except Exception as e:
+        logging.warning("MusicBrainz lookup failed for '%s' by '%s': %s", title, artist, e)
+    return None
 
 def lreplace(pattern, sub, string):
     """
@@ -187,9 +284,19 @@ def extract_info_from_file(path, dance_list, language):
 
             if file:
                 if "artist" in file.keys() or "albumartist" in file.keys():
-                    return extract_v1(file, path, dance_list, language)
+                    track = extract_v1(file, path, dance_list, language)
                 else:
-                    return extract_v2(file, path, dance_list, language)
+                    track = extract_v2(file, path, dance_list, language)
+                if track:
+                    track.fingerprint, track.duration = fpcalc(path)
+                    mbids = read_mbids(path)
+                    track.mbid = mbids.get("mbid")
+                    track.band.mbid = mbids.get("artist_mbid")
+                    if track.album:
+                        track.album.mbid = mbids.get("album_mbid")
+                        if track.album.band and track.album.band is not track.band:
+                            track.album.band.mbid = mbids.get("albumartist_mbid")
+                return track
         except:
             print("Failed to load file '{:}'".format(path))
 
@@ -351,22 +458,9 @@ def update_file(filename, language, clear_genre, append_genre):
             print("No data found for {:} by {:}".format(track.title, track.band.name))
     return track, found, dances_found
 
-def find_dances_online(track, language):
-    """
-    Query the online database and add the found dances to the track data
-    :param track:   Track to look up the dances for
-    :param language:  Language to get the dance names in
-    :return:        If the track is found in the database
-    """
-    global host
-    print("Querying for '{:}' by '{:}'".format(track.title, track.band.name))
-    data = {"track":track.json(), "language":language}
-    url = host+"/interface/query_db.php"
-    response = requests.post(url, json = data)
-    # print (str(response.content).replace("\\n","\n"))
-    response_text = str(response.text)
-    response_data = json.loads(response_text)
-
+def _apply_dance_response(track, response):
+    """Fill the track with the dances/bpm from a lookup response, return its status"""
+    response_data = json.loads(str(response.text))
     track.dances = []
     found = response_data["status"]
     if found > 0:
@@ -380,9 +474,37 @@ def find_dances_online(track, language):
                 track.dances += [dance]
     return found
 
+def find_dances_online(track, language):
+    """
+    Query the online database and add the found dances to the track data. A MusicBrainz
+    recording id (from the file's tags, or looked up when the file carries none) matches
+    exactly, so it is tried first; the name based query is the fallback.
+    :param track:   Track to look up the dances for
+    :param language:  Language to get the dance names in
+    :return:        If the track is found in the database
+    """
+    global host
+    print("Querying for '{:}' by '{:}'".format(track.title, track.band.name))
+    if not track.mbid:
+        track.mbid = musicbrainz_lookup(track.title, track.band.name)
+    if track.mbid:
+        response = post_with_retries(host+"/interface/track_details_by_mbid.php",
+                                     json = {"mbid":track.mbid, "language":language}, timeout = (10, 60))
+        found = _apply_dance_response(track, response)
+        if found > 0:
+            return found
+        # ponytail: unknown mbid server side falls through to the name query instead of
+        # reporting "not found" — drop the fallthrough once every track carries an mbid.
+
+    data = {"track":track.json(), "language":language}
+    url = host+"/interface/query_db.php"
+    response = post_with_retries(url, json = data, timeout = (10, 60))
+    # print (str(response.content).replace("\\n","\n"))
+    return _apply_dance_response(track, response)
+
 def get_dance_list():
     url = host+"/interface/dances_all.php"
-    response = requests.post(url)
+    response = post_with_retries(url, timeout = (10, 60))
 # print (str(response.content).replace("\\n","\n"))
     response_text = str(response.text)
     response_data = json.loads(response_text)
