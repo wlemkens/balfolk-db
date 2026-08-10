@@ -31,8 +31,8 @@ global supportedExtensions
 supportedExtensions = [".mp3", ".flac"]
 
 global host
-host = "https://balfolk-db.eu"
-# host = "http://balfolkdb-test"
+# host = "https://balfolk-db.eu"
+host = "http://balfolk-db-dev.be"
 
 def post_with_retries(*args, retries=5, backoff=2, **kwargs):
     """requests.post that retries transient network failures before giving up.
@@ -458,10 +458,22 @@ def update_file(filename, language, clear_genre, append_genre):
             print("No data found for {:} by {:}".format(track.title, track.band.name))
     return track, found, dances_found
 
-def _apply_dance_response(track, response):
-    """Fill the track with the dances/bpm from a lookup response, return its status"""
-    response_data = json.loads(str(response.text))
+def _apply_dance_response(track, response, source):
+    """Fill the track with the dances/bpm from a lookup response, return its status.
+    A reply that is not a status object counts as "not found" so the caller can fall back,
+    but it means the endpoint is broken rather than merely empty, so it is logged."""
+    try:
+        response_data = json.loads(str(response.text))
+    except ValueError:
+        logging.warning("%s did not answer with JSON (HTTP %s): %.200s",
+                        source, response.status_code, response.text)
+        return 0
     track.dances = []
+    if not isinstance(response_data, dict) or "status" not in response_data:
+        # a server older than the status flag answers a missed lookup with a bare []
+        logging.warning("%s answered without a status, treating as not found: %.200s",
+                        source, response.text)
+        return 0
     found = response_data["status"]
     if found > 0:
         if "dances" in response_data.keys():
@@ -470,6 +482,10 @@ def _apply_dance_response(track, response):
             if bpm > 0:
                 track.bpm = bpm
             for dance_str in dances:
+                # query_db.php answers with plain names, track_details_by_mbid.php with
+                # objects carrying the votes behind each name
+                if isinstance(dance_str, dict):
+                    dance_str = dance_str["name"]
                 dance = Dance(None, dance_str)
                 track.dances += [dance]
     return found
@@ -490,7 +506,7 @@ def find_dances_online(track, language):
     if track.mbid:
         response = post_with_retries(host+"/interface/track_details_by_mbid.php",
                                      json = {"mbid":track.mbid, "language":language}, timeout = (10, 60))
-        found = _apply_dance_response(track, response)
+        found = _apply_dance_response(track, response, "track_details_by_mbid.php")
         if found > 0:
             return found
         # ponytail: unknown mbid server side falls through to the name query instead of
@@ -500,7 +516,7 @@ def find_dances_online(track, language):
     url = host+"/interface/query_db.php"
     response = post_with_retries(url, json = data, timeout = (10, 60))
     # print (str(response.content).replace("\\n","\n"))
-    return _apply_dance_response(track, response)
+    return _apply_dance_response(track, response, "query_db.php")
 
 def get_dance_list():
     url = host+"/interface/dances_all.php"

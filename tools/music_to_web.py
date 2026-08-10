@@ -94,11 +94,13 @@ def send_json_to_web(track, username, password, language):
             print(f"Sending {samples_needed} samples")
             send_samples(track, username, password, track_key, samples_needed, id, 30)
     else:
-        logging.error(
-            "Invalid respone when submitting track '{:}' from band '{:}' on album '{:}'".format(track["title"], track["band"]["name"],
-                                                                                 album))
-        logging.error(str(response.content))
-        return str(response.content)
+        # The server answers with a php error page when a save fails. It is unreadable in
+        # a status label, so the whole thing goes to the log and the screen gets a line
+        # pointing at it.
+        logging.error("Invalid response from %s (HTTP %s) when submitting track '%s' from band '%s' on album '%s'",
+                      url, response.status_code, track["title"], track["band"]["name"], album)
+        logging.error("Response was: %s", response.text)
+        return "Server error while submitting '{:}' - details are in the log".format(track["title"])
     return None
 
 def extract_info_from_collection(directory, language, username, password):

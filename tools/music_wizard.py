@@ -307,7 +307,7 @@ def synchronize():
         # freeze the progress screen. Surface it (full traceback goes to the log).
         logging.exception("Unexpected error during synchronization")
         app.queueFunction(syncError, "Something went wrong during synchronization.",
-                          "The full error was written to music_wizard.log\n\n" + repr(e))
+                          "The full error was written to " + log_path + "\n\n" + repr(e))
 
 def syncError(title, detail):
     app.removeAllWidgets()
@@ -401,7 +401,15 @@ def pressClose(button):
 def pressSyncOther(button):
     uploadScreen1()
 
-logging.basicConfig(filename='music_wizard.log', encoding='utf-8', level=logging.DEBUG)
+# gui() above already put a stderr handler on the root logger, and basicConfig() does
+# nothing when one is present, so force our own over it. Absolute path because a frozen
+# build starts in whatever directory the user launched it from, which is often read-only.
+log_path = os.path.join(os.path.expanduser("~"), "music_wizard.log")
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(asctime)s %(levelname)s %(message)s",
+                    handlers=[logging.FileHandler(log_path, encoding="utf-8"),
+                              logging.StreamHandler()],
+                    force=True)
 
 firstScreen()
 

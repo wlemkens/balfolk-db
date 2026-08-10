@@ -10,8 +10,10 @@ class _FakeFile:
 
 
 class _FakeResponse:
-    def __init__(self, payload):
-        self.text = common.json.dumps(payload)
+    def __init__(self, payload, status_code=200):
+        # a str payload is sent as is, so a test can hand over a php error page
+        self.text = payload if isinstance(payload, str) else common.json.dumps(payload)
+        self.status_code = status_code
 
     def json(self):
         return common.json.loads(self.text)
@@ -82,10 +84,53 @@ def _run():
     urls = _lookup_calls(_track(), None, [hit])
     assert urls == [common.host + "/interface/query_db.php"], urls
 
+    # an old server answers the mbid query with a bare [] : a miss, not a crash
+    urls = _lookup_calls(_track("rec-4"), None, [[], hit])
+    assert urls == [common.host + "/interface/track_details_by_mbid.php",
+                    common.host + "/interface/query_db.php"], urls
+
+    # track_details_by_mbid.php spells its dances as objects, with the votes behind them
+    detailed = {"status": 1, "bpm": 120,
+                "dances": [{"id": 152, "name": "Zwiefacher", "official": 0,
+                            "upvotes": 1, "downvotes": 0}]}
+    track = _track("rec-5")
+    urls = _lookup_calls(track, None, [detailed])
+    assert urls == [common.host + "/interface/track_details_by_mbid.php"], urls
+    assert [d.name for d in track.dances] == ["Zwiefacher"] and track.bpm == 120
+
+    # found by mbid but nobody has tagged a dance yet: still a hit, no name query
+    track = _track("rec-6")
+    urls = _lookup_calls(track, None, [{"status": 1, "bpm": -1, "dances": []}])
+    assert urls == [common.host + "/interface/track_details_by_mbid.php"], urls
+    assert track.dances == []
+
     # mbid unknown to the server: falls through to the old path
     urls = _lookup_calls(_track("rec-3"), None, [miss, hit])
     assert urls == [common.host + "/interface/track_details_by_mbid.php",
                     common.host + "/interface/query_db.php"], urls
+
+    # a broken endpoint still falls back to the name query, but says so in the log
+    warnings = []
+    real_warning = common.logging.warning
+    common.logging.warning = lambda msg, *a: warnings.append(msg % a)
+
+    # php died and answered with an error page instead of JSON
+    urls = _lookup_calls(_track("rec-7"), None, ["<b>Fatal error</b>: Uncaught TypeError", hit])
+    assert urls == [common.host + "/interface/track_details_by_mbid.php",
+                    common.host + "/interface/query_db.php"], urls
+    assert any("track_details_by_mbid.php" in w for w in warnings), warnings
+
+    # a server too old to send a status flag answers []
+    warnings.clear()
+    _lookup_calls(_track("rec-8"), None, [[], hit])
+    assert any("track_details_by_mbid.php" in w for w in warnings), warnings
+
+    # a plain miss is not an error and stays quiet
+    warnings.clear()
+    _lookup_calls(_track("rec-9"), None, [miss, hit])
+    assert warnings == [], warnings
+
+    common.logging.warning = real_warning
 
     print("mbid reading and lookup routing: all checks passed")
 
