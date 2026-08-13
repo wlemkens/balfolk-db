@@ -23,9 +23,6 @@ and a warning whenever a server endpoint answers with something unexpected.
 ## Not available via pip install
   - Tkinter
   
-# Windows pydub changes
-Use the supplied patches to patch pydub in order to prevent dos popups.
-
 ## cx-Freeze
 ### Dependencies
 #### System

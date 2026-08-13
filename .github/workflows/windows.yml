@@ -16,13 +16,6 @@ jobs:
           python-version: '3.12'
       - run: pip install cx_Freeze appJar mutagen pydub requests
 
-      - name: Patch pydub (prevents dos box popups)
-        shell: bash
-        run: |
-          d=$(python -c "import pydub, os; print(os.path.dirname(pydub.__file__))")
-          patch "$d/audio_segment.py" patch/audio_segment.patch
-          patch "$d/utils.py" patch/utils.patch
-
       - name: Fetch bundled ffmpeg/ffprobe/fpcalc
         shell: bash
         run: |

@@ -2,6 +2,17 @@ import os
 import sys
 import shutil
 import subprocess
+
+if sys.platform == "win32":
+    # The GUI build has no console, so every ffmpeg/ffprobe/fpcalc call would flash a
+    # dos box. Patching this in before pydub imports Popen covers pydub too, which is
+    # why the old patch/*.patch files against pydub's source are gone.
+    class _NoWindowPopen(subprocess.Popen):
+        def __init__(self, *args, **kwargs):
+            kwargs["creationflags"] = kwargs.get("creationflags", 0) | subprocess.CREATE_NO_WINDOW
+            super().__init__(*args, **kwargs)
+    subprocess.Popen = _NoWindowPopen
+
 import mutagen
 from pydub import AudioSegment
 import random
