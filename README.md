@@ -40,6 +40,12 @@ python setup.py build
 python setup.py bdist_msi
 ```
 
+### Building Windows from Linux
+cx_Freeze does not cross-compile, so the Windows build runs on GitHub instead:
+Actions -> "Windows build" -> Run workflow (or push a `v*` tag). The MSI lands in the
+run's artifacts. The workflow downloads `ffmpeg.exe`/`ffprobe.exe`/`fpcalc.exe` and
+applies the pydub patches itself, so nothing Windows-specific is needed locally.
+
 
 I.e.
 ```
