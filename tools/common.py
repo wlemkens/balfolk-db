@@ -42,8 +42,8 @@ global supportedExtensions
 supportedExtensions = [".mp3", ".flac"]
 
 global host
-# host = "https://balfolk-db.eu"
-host = "http://balfolk-db-dev.be"
+host = "https://balfolk-db.eu"
+# host = "http://balfolk-db-dev.be"
 
 def post_with_retries(*args, retries=5, backoff=2, **kwargs):
     """requests.post that retries transient network failures before giving up.
