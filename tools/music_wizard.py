@@ -41,13 +41,8 @@ def hasNewVersion():
     response = requests.post(url, headers = headers)
     result = json.loads(response.content)
 
-    if platform.system() == 'Linux':
-        if result["linux"] > version:
-            return True
-    else:
-        if result["windows"] > version:
-            return True
-    return False
+    key = "linux" if platform.system() == 'Linux' else "windows"
+    return versionTuple(result[key]) > versionTuple(version)
 
 def firstScreen():
     if hasNewVersion():

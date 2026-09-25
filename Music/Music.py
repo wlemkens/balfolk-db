@@ -38,6 +38,7 @@ class Track(object):
         self.id = None
         self.album = album
         self.number = number
+        self.disc: "int | None" = None   # Which disc of a multi-disc release, None when not tagged
         self.title = title
         self.level = None
         self.dances = dances
@@ -56,7 +57,7 @@ class Track(object):
         album = {}
         if self.album:
             album = self.album.json()
-        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "filename" : self.filename, "bpm" : self.bpm, "fingerprint" : self.fingerprint, "duration" : self.duration, "mbid" : self.mbid}
+        return { "id" : self.id, "album" : album, "title" : self.title, "level" : self.level, "dances" : dances_json, "band" : self.band.json(), "number" : self.number, "disc" : self.disc, "filename" : self.filename, "bpm" : self.bpm, "fingerprint" : self.fingerprint, "duration" : self.duration, "mbid" : self.mbid}
 
     def flat_json(self):
         dances_json = []

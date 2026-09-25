@@ -45,6 +45,11 @@ global host
 host = "https://balfolk-db.eu"
 # host = "http://balfolk-db-dev.be"
 
+def versionTuple(v):
+    """Dotted version as a tuple of ints, so 1.10.0 sorts above 1.2.0.
+    ponytail: plain numeric versions only; use packaging.version if we ever ship "1.3.0-beta"."""
+    return tuple(int(p) for p in v.split("."))
+
 def post_with_retries(*args, retries=5, backoff=2, **kwargs):
     """requests.post that retries transient network failures before giving up.
     Retries connection errors and timeouts up to `retries` times; on the final
@@ -170,6 +175,15 @@ def getYear(date):
     except ValueError:
         return None
 
+def disc_number(value):
+    """Disc number as a positive int from "2" or "2/2", or None when there is none.
+    Same reading as the server's audioTrackNumber(): anything else means "not stated",
+    which is not the same as disc 1."""
+    m = re.match(r"\s*(\d+)", str(value))
+    if not m or int(m.group(1)) <= 0:
+        return None
+    return int(m.group(1))
+
 def parse_title_dance(title, dances, language):
     p = re.compile("\(.*\)")
     m = p.search(title)
@@ -221,6 +235,8 @@ def extract_v1(file, filename, dance_list, lang):
         if "tracknumber" in file.keys():
             track_nb = file["tracknumber"][0]
         track = Track(album, track_nb, file["title"][0], dances, band, filename, bpm)
+        if "discnumber" in file.keys():
+            track.disc = disc_number(file["discnumber"][0])
         return track
     return None
 
@@ -268,6 +284,8 @@ def extract_v2(file, filename, dance_list, lang):
         if "TRCK" in file.keys():
             track_nb = file["TRCK"].text[0]
         track = Track(album, track_nb, file["TIT2"].text[0], dances, band, filename, bpm)
+        if "TPOS" in file.keys():
+            track.disc = disc_number(file["TPOS"].text[0])
         return track
     return None
 
