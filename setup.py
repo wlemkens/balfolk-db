@@ -1,6 +1,12 @@
 import sys
 from cx_Freeze import setup, Executable
 from tools.version import version
+from tools.common import host
+
+# A build that ships the dev server would send every user's library there.
+PRODUCTION_HOST = "https://balfolk-db.eu"
+if host != PRODUCTION_HOST:
+    raise SystemExit("Refusing to build: tools/common.py host is {:} instead of {:}".format(host, PRODUCTION_HOST))
 
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = {
