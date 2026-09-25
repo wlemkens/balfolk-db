@@ -113,3 +113,4 @@ login.db*
 # temporary files
 /tools/restored.mp3
 /tools/tmp.mp3
+/.vscode/
