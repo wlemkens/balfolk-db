@@ -57,6 +57,30 @@ def send_samples(track, username, password, key, sample_count, id, sample_length
             response = post_with_retries(url, data = data, files=files, timeout = (10, 300))
             os.unlink(tmpFilename)
 
+def send_full_track(track, username, password, key, id):
+    """
+    Send the whole file, so reviewers can hear more than the excerpts. Asks first, so a track
+    the server already has in full costs one small request instead of the whole file.
+    The server only takes MP3.
+    """
+    if not track["filename"].lower().endswith(".mp3"):
+        return
+    url = host+"/interface/add_full_track.php"
+    data = {"username": username, "password": password, "key": key, "trackid": id}
+    response = post_with_retries(url, data = data, timeout = (10, 60))
+    try:
+        wanted = response.json()["wanted"]
+    except (ValueError, KeyError):
+        # An older server has no question form and answers 400/403; nothing to send then.
+        logging.error("Full track check for '%s' failed (HTTP %s): %s", track["title"], response.status_code, response.text)
+        return
+    if not wanted:
+        return
+    files = {"track": ("tmp.mp3", read_for_db(track["filename"]))}
+    response = post_with_retries(url, data = data, files = files, timeout = (10, 300))
+    if response.status_code != 200:
+        logging.error("Full track upload for '%s' failed (HTTP %s): %s", track["title"], response.status_code, response.text)
+
 def send_json_to_web(track, username, password, language):
     """
     Send metadata from a track to the server
@@ -93,6 +117,7 @@ def send_json_to_web(track, username, password, language):
         if samples_needed > 0:
             print(f"Sending {samples_needed} samples")
             send_samples(track, username, password, track_key, samples_needed, id, 30)
+        send_full_track(track, username, password, track_key, id)
     else:
         # The server answers with a php error page when a save fails. It is unreadable in
         # a status label, so the whole thing goes to the log and the screen gets a line
